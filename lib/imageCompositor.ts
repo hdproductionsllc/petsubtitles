@@ -104,12 +104,12 @@ function fitText(
   return { lines: wrapText(ctx, text, maxWidth), fontSize: minSize };
 }
 
-/** Draw the standard format: original image + subtitle bar + branded footer.
+/** Draw the standard format: original image + subtitle boxes + branded footer.
  *
  * Layout (top to bottom):
  * 1. Full pet photo at original aspect ratio
- * 2. Semi-transparent gradient overlay on bottom ~25% of photo (subtitle zone)
- * 3. White bold caption text rendered inside the gradient zone
+ * 2. Per-line semi-transparent dark rounded boxes near bottom (Netflix-style subtitles)
+ * 3. White bold caption text rendered inside each box
  * 4. Coral footer bar APPENDED BELOW the photo (extra canvas height)
  */
 function drawStandard(
@@ -131,17 +131,7 @@ function drawStandard(
   // 1. Draw the full photo
   ctx.drawImage(img, 0, 0);
 
-  // 2. Gradient overlay on the bottom 30% of the photo
-  const gradientHeight = h * 0.30;
-  const gradientY = h - gradientHeight;
-  const gradient = ctx.createLinearGradient(0, gradientY, 0, h);
-  gradient.addColorStop(0, "rgba(0, 0, 0, 0)");
-  gradient.addColorStop(0.35, "rgba(0, 0, 0, 0.4)");
-  gradient.addColorStop(1, "rgba(0, 0, 0, 0.75)");
-  ctx.fillStyle = gradient;
-  ctx.fillRect(0, gradientY, w, gradientHeight);
-
-  // 3. Caption text — positioned within the gradient zone with padding
+  // 2. Caption text in per-line subtitle boxes (no gradient overlay)
   const padding = w * 0.06;
   const maxTextWidth = w - padding * 2;
   const { lines, fontSize } = fitText(
@@ -154,22 +144,39 @@ function drawStandard(
     fontFamily
   );
 
+  const boxPadH = Math.round(fontSize * 0.45); // horizontal padding
+  const boxPadV = Math.round(fontSize * 0.25); // vertical padding
+  const boxRadius = Math.max(8, Math.round(fontSize * 0.22));
   const lineHeight = fontSize * 1.3;
-  const textBlockHeight = lines.length * lineHeight;
-  // Bottom of text block sits 15% up from photo bottom (well above footer)
+  const boxLineHeight = lineHeight + boxPadV * 2;
+  const boxGap = Math.round(fontSize * 0.2);
+  const textBlockHeight = lines.length * boxLineHeight + (lines.length - 1) * boxGap;
   const bottomPadding = h * 0.04;
-  const textStartY = h - bottomPadding - textBlockHeight + lineHeight * 0.3;
+  const blockStartY = h - bottomPadding - textBlockHeight;
 
-  ctx.textAlign = "center";
-  ctx.fillStyle = "white";
   ctx.font = `bold ${fontSize}px ${fontFamily}`;
-  ctx.shadowColor = "rgba(0, 0, 0, 0.8)";
-  ctx.shadowBlur = 6;
-  ctx.shadowOffsetX = 0;
-  ctx.shadowOffsetY = 2;
+  ctx.textAlign = "center";
 
   for (let i = 0; i < lines.length; i++) {
-    ctx.fillText(lines[i], w / 2, textStartY + i * lineHeight);
+    const line = lines[i];
+    const textWidth = ctx.measureText(line).width;
+    const boxW = textWidth + boxPadH * 2;
+    const boxX = (w - boxW) / 2;
+    const boxY = blockStartY + i * (boxLineHeight + boxGap);
+
+    // Dark semi-transparent rounded box
+    ctx.fillStyle = "rgba(0, 0, 0, 0.7)";
+    ctx.beginPath();
+    ctx.roundRect(boxX, boxY, boxW, boxLineHeight, boxRadius);
+    ctx.fill();
+
+    // White text centered in the box
+    ctx.fillStyle = "white";
+    ctx.shadowColor = "rgba(0, 0, 0, 0.6)";
+    ctx.shadowBlur = 3;
+    ctx.shadowOffsetX = 0;
+    ctx.shadowOffsetY = 1;
+    ctx.fillText(line, w / 2, boxY + boxPadV + lineHeight * 0.78);
   }
 
   // Reset shadow

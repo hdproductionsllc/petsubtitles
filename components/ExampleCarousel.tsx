@@ -26,7 +26,7 @@ export default function ExampleCarousel({ onTryIt }: Props) {
         What is your pet <span className="text-coral">REALLY</span> thinking?
       </h2>
       <p className="text-center text-sm text-charcoal-light mb-4">
-        AI-powered pet thought translation
+        Your pet has opinions. Now they have subtitles.
       </p>
 
       {/* Example card — real composited image */}

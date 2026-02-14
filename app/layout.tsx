@@ -28,9 +28,9 @@ export const viewport: Viewport = {
 
 export const metadata: Metadata = {
   metadataBase: new URL("https://petsubtitles.com"),
-  title: "PetSubtitles — What Is Your Pet Really Thinking? | AI Pet Translator",
+  title: "PetSubtitles — Your Pet Has Opinions",
   description:
-    "Upload a photo of your pet and AI translates their inner monologue into hilarious subtitles. 7 voice styles, shareable images, totally free. Try it now!",
+    "Upload a pet photo. AI writes what they're really thinking. 7 hilarious voice styles. Free and instantly shareable.",
   keywords: [
     "pet subtitles",
     "what is my pet thinking",
@@ -52,9 +52,9 @@ export const metadata: Metadata = {
     title: "PetSubtitles",
   },
   openGraph: {
-    title: "What Is Your Pet Really Thinking? | PetSubtitles",
+    title: "Your Pet Has Opinions. Now They Have Subtitles.",
     description:
-      "AI translates your pet's thoughts into hilarious movie-style subtitles. 7 voice styles. Shareable images. Try it free.",
+      "Upload a pet photo. AI writes their inner monologue as movie-style subtitles. Funny, shareable, and way too accurate.",
     url: "https://petsubtitles.com",
     siteName: "PetSubtitles",
     images: [
@@ -62,7 +62,7 @@ export const metadata: Metadata = {
         url: "/og-image.png",
         width: 1200,
         height: 630,
-        alt: "PetSubtitles — AI-powered pet thought translation with a happy dog",
+        alt: "PetSubtitles — Your pet has opinions. Now they have subtitles.",
       },
     ],
     type: "website",
@@ -70,9 +70,9 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: "What Is Your Pet Really Thinking? 🐾",
+    title: "Your Pet Has Opinions 🐾",
     description:
-      "AI translates your pet's thoughts into hilarious subtitles. Upload a photo → get a shareable meme. Free.",
+      "Upload a pet photo. AI writes their inner monologue as movie-style subtitles. Funny, shareable, and way too accurate.",
     images: ["/og-image.png"],
   },
   icons: {
