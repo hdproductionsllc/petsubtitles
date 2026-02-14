@@ -5,13 +5,14 @@ export function canUseWebShare(): boolean {
 }
 
 /** Generate descriptive filename: whatmypetthinks-funny-20260213-143022.png */
-export function generateFilename(voiceStyle?: string, isStory?: boolean): string {
+export function generateFilename(voiceStyle?: string, isStory?: boolean, isConvo?: boolean): string {
   const now = new Date();
   const date = now.toISOString().slice(0, 10).replace(/-/g, "");
   const time = now.toTimeString().slice(0, 8).replace(/:/g, "");
   const voice = voiceStyle || "funny";
+  const prefix = isConvo ? "whatmypetthinks-convo" : "whatmypetthinks";
   const suffix = isStory ? "-story" : "";
-  return `whatmypetthinks-${voice}${suffix}-${date}-${time}.png`;
+  return `${prefix}-${voice}${suffix}-${date}-${time}.png`;
 }
 
 async function dataUrlToBlob(dataUrl: string): Promise<Blob> {
@@ -23,18 +24,23 @@ export async function shareImage(
   dataUrl: string,
   caption: string,
   voiceStyle?: string,
-  isStory?: boolean
+  isStory?: boolean,
+  isConvo?: boolean
 ): Promise<boolean> {
   if (!canUseWebShare()) return false;
 
   try {
     const blob = await dataUrlToBlob(dataUrl);
-    const filename = generateFilename(voiceStyle, isStory);
+    const filename = generateFilename(voiceStyle, isStory, isConvo);
     const file = new File([blob], filename, { type: "image/png" });
+
+    const text = isConvo
+      ? "My pet started texting me 😂 #WhatMyPetThinks\n\nhttps://whatmypetthinks.com"
+      : "Look what my pet thinks 😂 #WhatMyPetThinks\n\nhttps://whatmypetthinks.com";
 
     await navigator.share({
       title: "What My Pet Thinks",
-      text: `Look what my pet thinks 😂 #WhatMyPetThinks\n\nhttps://whatmypetthinks.com`,
+      text,
       files: [file],
     });
     return true;
@@ -83,8 +89,10 @@ export function openTikTok(): void {
 }
 
 /** Open X/Twitter tweet compose with pre-filled text */
-export function shareToX(caption: string): void {
-  const text = `"${caption}" 😂\n\nFind out what your pet thinks 😂 #WhatMyPetThinks whatmypetthinks.com`;
+export function shareToX(caption: string, isConvo?: boolean): void {
+  const text = isConvo
+    ? "My pet started texting me and I can't 😂 #WhatMyPetThinks whatmypetthinks.com"
+    : `"${caption}" 😂\n\nFind out what your pet thinks 😂 #WhatMyPetThinks whatmypetthinks.com`;
   const url = `https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}`;
   window.open(url, "_blank");
 }

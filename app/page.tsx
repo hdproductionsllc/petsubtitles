@@ -17,7 +17,8 @@ import RecentHistory, {
   type HistoryItem,
 } from "@/components/RecentHistory";
 import { processImageFile } from "@/lib/imageUtils";
-import { compositeSubtitles, compositeBattle, type BattleEntry } from "@/lib/imageCompositor";
+import { compositeSubtitles, compositeConvo, compositeBattle, type BattleEntry } from "@/lib/imageCompositor";
+import type { ConvoMessage } from "@/lib/anthropic";
 import {
   hasCredits,
   getAvailableCredits,
@@ -64,6 +65,8 @@ export default function Home() {
   const [shareToast, setShareToast] = useState<string | null>(null);
   const [battleImage, setBattleImage] = useState("");
   const [battleEntries, setBattleEntries] = useState<BattleEntry[]>([]);
+  const [selectedFormat, setSelectedFormat] = useState<"caption" | "convo">("caption");
+  const [convoMessages, setConvoMessages] = useState<ConvoMessage[]>([]);
   const [petName, setPetName] = useState("");
   const [petPronouns, setPetPronouns] = useState("");
 
@@ -120,6 +123,7 @@ export default function Home() {
     setStoryImage("");
     setBattleImage("");
     setBattleEntries([]);
+    setConvoMessages([]);
     setError("");
     setAppState("idle");
   }, []);
@@ -134,6 +138,7 @@ export default function Home() {
     setStoryImage("");
     setBattleImage("");
     setBattleEntries([]);
+    setConvoMessages([]);
     setError("");
     setAppState("idle");
     setTimeout(() => {
@@ -172,6 +177,7 @@ export default function Home() {
     if (!imageData) return;
 
     const voiceToUse = voice ?? selectedVoice;
+    const format = selectedFormat;
 
     // Check credits
     if (!hasCredits()) {
@@ -184,7 +190,7 @@ export default function Home() {
     const hasPet = await scanForPets();
     if (!hasPet) return;
 
-    trackEvent("translate_tapped");
+    trackEvent("translate_tapped", { format });
     setAppState("translating");
     setError("");
 
@@ -198,6 +204,7 @@ export default function Home() {
           voiceStyle: voiceToUse,
           petName: petName || undefined,
           pronouns: petPronouns || undefined,
+          format,
         }),
       });
 
@@ -207,16 +214,30 @@ export default function Home() {
         throw new Error(data.error || "Translation failed");
       }
 
-      setCaption(data.caption);
-      trackEvent("translation_received", { voice_style: voiceToUse });
-
-      // Composite the subtitles using full-resolution original
       let composited;
-      try {
-        composited = await compositeSubtitles(imageData.originalDataUrl, data.caption);
-      } catch {
-        throw new Error("Couldn't create the subtitle image. Try a different photo.");
+
+      if (format === "convo") {
+        setConvoMessages(data.messages);
+        setCaption("Text conversation");
+        trackEvent("convo_received", { voice_style: voiceToUse });
+
+        try {
+          composited = await compositeConvo(data.messages, petName || undefined);
+        } catch {
+          throw new Error("Couldn't create the conversation image. Try a different photo.");
+        }
+      } else {
+        setCaption(data.caption);
+        setConvoMessages([]);
+        trackEvent("translation_received", { voice_style: voiceToUse });
+
+        try {
+          composited = await compositeSubtitles(imageData.originalDataUrl, data.caption);
+        } catch {
+          throw new Error("Couldn't create the subtitle image. Try a different photo.");
+        }
       }
+
       setStandardImage(composited.standardDataUrl);
       setStoryImage(composited.storyDataUrl);
 
@@ -230,7 +251,7 @@ export default function Home() {
         thumbnailDataUrl: thumbnail,
         standardImageUrl: composited.standardDataUrl,
         storyImageUrl: composited.storyDataUrl,
-        caption: data.caption,
+        caption: format === "convo" ? "Text Convo" : data.caption,
       });
       setHistoryKey((k) => k + 1);
 
@@ -246,7 +267,7 @@ export default function Home() {
       );
       setAppState("error");
     }
-  }, [imageData, selectedVoice, petName, petPronouns, refreshCredits, scanForPets]);
+  }, [imageData, selectedVoice, selectedFormat, petName, petPronouns, refreshCredits, scanForPets]);
 
   const doBattle = useCallback(async () => {
     if (!imageData) return;
@@ -353,11 +374,11 @@ export default function Home() {
     photoCaptureRef.current?.openFilePicker();
   }, []);
 
-  /** "Different Caption" — re-translate same photo, same voice */
+  /** "Different Caption/Convo" — re-translate same photo, same voice */
   const handleDifferentCaption = useCallback(() => {
-    trackEvent("different_caption_tapped");
+    trackEvent("different_caption_tapped", { format: selectedFormat });
     doTranslate();
-  }, [doTranslate]);
+  }, [doTranslate, selectedFormat]);
 
   const showingResult = appState === "result" || appState === "battle_result";
   const showingLoading = appState === "translating" || appState === "battle_translating" || appState === "scanning";
@@ -419,6 +440,32 @@ export default function Home() {
           onNameChange={setPetName}
           onPronounsChange={setPetPronouns}
         />
+      )}
+
+      {/* Format selector — show when photo selected or in result state (not battle) */}
+      {(appState === "photo_selected" || appState === "result") && (
+        <div className="flex justify-center gap-1 px-4 py-2">
+          <button
+            onClick={() => setSelectedFormat("caption")}
+            className={`rounded-full px-5 py-2 text-sm font-bold transition ${
+              selectedFormat === "caption"
+                ? "bg-coral text-white"
+                : "bg-gray-100 text-charcoal"
+            }`}
+          >
+            Caption
+          </button>
+          <button
+            onClick={() => setSelectedFormat("convo")}
+            className={`rounded-full px-5 py-2 text-sm font-bold transition ${
+              selectedFormat === "convo"
+                ? "bg-coral text-white"
+                : "bg-gray-100 text-charcoal"
+            }`}
+          >
+            Text Convo
+          </button>
+        </div>
       )}
 
       {/* Voice selector — show when photo selected, translating, OR in result state (not battle) */}
@@ -518,6 +565,7 @@ export default function Home() {
             storyImageUrl={storyImage}
             caption={caption}
             voiceStyle={selectedVoice}
+            isConvo={selectedFormat === "convo"}
             onShareComplete={handleShareComplete}
             onDifferentCaption={imageData ? handleDifferentCaption : undefined}
             onNewPhoto={handleNewPhoto}

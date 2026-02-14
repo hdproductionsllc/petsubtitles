@@ -58,6 +58,36 @@ const VOICE_MODIFIERS: Record<VoiceStyle, string> = {
     "MAXIMUM drama. Latin soap opera energy. Every moment is life or death, betrayal, forbidden love. Someone has been DECEIVED. Hearts are SHATTERED. The treat bag is empty and this is the greatest tragedy of our generation. Dramatic gasps. Passionate declarations. Over-the-top in every possible way.",
 };
 
+export interface ConvoMessage {
+  sender: "pet" | "owner";
+  text: string;
+}
+
+const CONVO_SYSTEM_PROMPT = `You are a comedy writer creating fake iMessage text conversations between a pet and their owner. You receive a photo of a pet and write a hilarious text exchange.
+
+STUDY THE PHOTO CAREFULLY:
+- Expression, body language, surroundings — use CONCRETE details from the photo
+- What just happened or is about to happen? Build the conversation around it.
+
+FORMAT:
+- Return a JSON array of message objects: [{"sender":"pet","text":"..."}, {"sender":"owner","text":"..."}, ...]
+- Exactly 6 messages, alternating: pet, owner, pet, owner, pet, owner
+- Pet ALWAYS starts the conversation
+- Each message is 3-30 words — real iMessage length, not essays
+- Return ONLY the JSON array, no other text
+
+COMEDY RULES:
+- The pet has a STRONG personality — opinions, grudges, schemes, entitlement
+- The owner is the straight man — confused, exasperated, trying to reason with the pet
+- ESCALATION: starts normal, gets increasingly absurd
+- Reference SPECIFIC things visible in the photo — "the sock," "the couch," "that other dog"
+- The pet's final message should be the punchline — an ultimatum, a threat, an absurd conclusion
+- Species-specific: Dogs = loyalty/food/anxiety. Cats = superiority/demands/dry wit.
+- Deadpan humor > exclamation marks
+- Never be mean-spirited, crude, or inappropriate
+- Never use hashtags or emojis in the messages
+- Never mention being an AI, an app, or a translation`;
+
 /** Quick check: does this image contain a pet/animal? */
 export async function detectPet(
   base64: string,
@@ -185,4 +215,90 @@ export async function translatePetPhoto(
   }
 
   return caption;
+}
+
+export async function generatePetConvo(
+  base64: string,
+  mediaType: "image/jpeg" | "image/png" | "image/gif" | "image/webp",
+  voiceStyle: VoiceStyle = "funny",
+  petName?: string,
+  pronouns?: string
+): Promise<ConvoMessage[]> {
+  const voiceModifier = VOICE_MODIFIERS[voiceStyle];
+  const systemPrompt = voiceModifier
+    ? `${CONVO_SYSTEM_PROMPT}\n\nIMPORTANT additional voice direction (apply to PET messages only): ${voiceModifier}`
+    : CONVO_SYSTEM_PROMPT;
+
+  const contactName = petName || "Pet";
+  const userText = `Create a text conversation between this pet and their owner. The pet's contact name is "${contactName}".${
+    pronouns ? ` Use ${pronouns} pronouns for the pet.` : ""
+  }`;
+
+  async function attempt(): Promise<ConvoMessage[]> {
+    const response = await client.messages.create({
+      model: "claude-sonnet-4-5-20250929",
+      max_tokens: 512,
+      system: systemPrompt,
+      messages: [
+        {
+          role: "user",
+          content: [
+            {
+              type: "image",
+              source: {
+                type: "base64",
+                media_type: mediaType,
+                data: base64,
+              },
+            },
+            { type: "text", text: userText },
+          ],
+        },
+        {
+          role: "assistant",
+          content: "[",
+        },
+      ],
+    });
+
+    const textBlock = response.content.find((block) => block.type === "text");
+    if (!textBlock || textBlock.type !== "text") {
+      throw new Error("No text response from AI");
+    }
+
+    // Reconstruct full JSON (we prefilled the opening bracket)
+    let raw = "[" + textBlock.text.trim();
+
+    // Strip markdown fences if present
+    raw = raw.replace(/^```(?:json)?\s*/i, "").replace(/\s*```$/i, "");
+
+    const parsed = JSON.parse(raw);
+
+    // Validate: array of 4-8 objects with sender + text
+    if (
+      !Array.isArray(parsed) ||
+      parsed.length < 4 ||
+      parsed.length > 8 ||
+      !parsed.every(
+        (m: unknown) =>
+          typeof m === "object" &&
+          m !== null &&
+          "sender" in m &&
+          "text" in m &&
+          ((m as ConvoMessage).sender === "pet" || (m as ConvoMessage).sender === "owner") &&
+          typeof (m as ConvoMessage).text === "string"
+      )
+    ) {
+      throw new Error("Invalid conversation format");
+    }
+
+    return parsed as ConvoMessage[];
+  }
+
+  // Try once, retry on failure
+  try {
+    return await attempt();
+  } catch {
+    return await attempt();
+  }
 }

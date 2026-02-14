@@ -20,6 +20,7 @@ interface Props {
   storyImageUrl: string;
   caption: string;
   voiceStyle?: string;
+  isConvo?: boolean;
   onShareComplete?: () => void;
   onDifferentCaption?: () => void;
   onNewPhoto?: () => void;
@@ -30,6 +31,7 @@ export default function ShareButtons({
   storyImageUrl,
   caption,
   voiceStyle,
+  isConvo,
   onShareComplete,
   onDifferentCaption,
   onNewPhoto,
@@ -45,13 +47,13 @@ export default function ShareButtons({
 
   const handleShare = async () => {
     trackEvent("share_tapped", { platform: "share_feed" });
-    const shared = await shareImage(standardImageUrl, caption, voiceStyle);
+    const shared = await shareImage(standardImageUrl, caption, voiceStyle, false, isConvo);
     if (shared && onShareComplete) onShareComplete();
   };
 
   const handleShareStory = async () => {
     trackEvent("share_tapped", { platform: "share_story" });
-    const shared = await shareImage(storyImageUrl, caption, voiceStyle, true);
+    const shared = await shareImage(storyImageUrl, caption, voiceStyle, true, isConvo);
     if (shared && onShareComplete) onShareComplete();
   };
 
@@ -62,20 +64,20 @@ export default function ShareButtons({
       try {
         const res = await fetch(standardImageUrl);
         const blob = await res.blob();
-        const file = new File([blob], generateFilename(voiceStyle), { type: "image/png" });
+        const file = new File([blob], generateFilename(voiceStyle, false, isConvo), { type: "image/png" });
         await navigator.share({ files: [file] });
         showToast("Saved! 🐾");
         if (onShareComplete) onShareComplete();
       } catch (err) {
         if (err instanceof Error && err.name !== "AbortError") {
           // Fallback to download if share fails
-          downloadImage(standardImageUrl, generateFilename(voiceStyle));
+          downloadImage(standardImageUrl, generateFilename(voiceStyle, false, isConvo));
           showToast("Saved! 🐾");
           if (onShareComplete) onShareComplete();
         }
       }
     } else {
-      downloadImage(standardImageUrl, generateFilename(voiceStyle));
+      downloadImage(standardImageUrl, generateFilename(voiceStyle, false, isConvo));
       showToast("Saved! 🐾");
       if (onShareComplete) onShareComplete();
     }
@@ -83,7 +85,7 @@ export default function ShareButtons({
 
   const handleInstagram = () => {
     trackEvent("share_tapped", { platform: "instagram" });
-    downloadImage(storyImageUrl, generateFilename(voiceStyle, true));
+    downloadImage(storyImageUrl, generateFilename(voiceStyle, true, isConvo));
     showToast("Image saved! Paste it in Instagram.");
     setTimeout(() => openInstagram(), 800);
     if (onShareComplete) onShareComplete();
@@ -91,7 +93,7 @@ export default function ShareButtons({
 
   const handleTikTok = () => {
     trackEvent("share_tapped", { platform: "tiktok" });
-    downloadImage(standardImageUrl, generateFilename(voiceStyle));
+    downloadImage(standardImageUrl, generateFilename(voiceStyle, false, isConvo));
     showToast("Image saved! Paste it in TikTok.");
     setTimeout(() => openTikTok(), 800);
     if (onShareComplete) onShareComplete();
@@ -99,15 +101,15 @@ export default function ShareButtons({
 
   const handleX = () => {
     trackEvent("share_tapped", { platform: "x" });
-    downloadImage(standardImageUrl, generateFilename(voiceStyle));
+    downloadImage(standardImageUrl, generateFilename(voiceStyle, false, isConvo));
     showToast("Image saved! Attach it to your tweet.");
-    setTimeout(() => shareToX(caption), 800);
+    setTimeout(() => shareToX(caption, isConvo), 800);
     if (onShareComplete) onShareComplete();
   };
 
   const handleFacebook = () => {
     trackEvent("share_tapped", { platform: "facebook" });
-    downloadImage(standardImageUrl, generateFilename(voiceStyle));
+    downloadImage(standardImageUrl, generateFilename(voiceStyle, false, isConvo));
     showToast("Image saved! Attach it to your post.");
     setTimeout(() => shareToFacebook(), 800);
     if (onShareComplete) onShareComplete();
@@ -230,7 +232,7 @@ export default function ShareButtons({
             onClick={onDifferentCaption}
             className="btn-press flex-1 rounded-xl bg-gray-100 px-3 py-3 text-sm font-semibold text-charcoal transition hover:bg-gray-200 min-h-[44px]"
           >
-            🔄 Different Caption
+            🔄 Different {isConvo ? "Convo" : "Caption"}
           </button>
         )}
         {onNewPhoto && (

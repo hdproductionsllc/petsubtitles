@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { translatePetPhoto, type VoiceStyle } from "@/lib/anthropic";
+import { translatePetPhoto, generatePetConvo, type VoiceStyle } from "@/lib/anthropic";
 
 export const maxDuration = 30;
 
@@ -62,7 +62,7 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { imageBase64, mediaType, voiceStyle = "funny", petName, pronouns } = body;
+    const { imageBase64, mediaType, voiceStyle = "funny", petName, pronouns, format = "caption" } = body;
 
     if (!imageBase64 || !mediaType) {
       return NextResponse.json(
@@ -92,10 +92,28 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    if (format !== "caption" && format !== "convo") {
+      return NextResponse.json(
+        { error: "Invalid format selected." },
+        { status: 400 }
+      );
+    }
+
     // Validate optional personalization
     const cleanName = typeof petName === "string" ? petName.slice(0, 20).trim() : undefined;
     const validPronouns = ["he/him", "she/her", "they/them"];
     const cleanPronouns = validPronouns.includes(pronouns) ? pronouns : undefined;
+
+    if (format === "convo") {
+      const messages = await generatePetConvo(
+        imageBase64,
+        mediaType as MediaType,
+        voiceStyle as VoiceStyle,
+        cleanName || undefined,
+        cleanPronouns
+      );
+      return NextResponse.json({ messages });
+    }
 
     const caption = await translatePetPhoto(
       imageBase64,
