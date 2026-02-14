@@ -1,0 +1,572 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>What My Pet Thinks — Find Out What Your Pet Is Really Thinking</title>
+  <meta name="description" content="Upload a photo of your pet and our AI translates their inner monologue into hilarious movie-style subtitles. Share the laughs with friends!">
+
+  <!-- Open Graph -->
+  <meta property="og:title" content="What My Pet Thinks — Find Out What Your Pet Is Really Thinking">
+  <meta property="og:description" content="AI translates your pet's thoughts into movie-style subtitles. Upload. Laugh. Share.">
+  <meta property="og:image" content="https://whatmypetthinks.com/og-image.png">
+  <meta property="og:url" content="https://whatmypetthinks.com">
+  <meta property="og:type" content="website">
+
+  <!-- Twitter Card -->
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="What My Pet Thinks — Find Out What Your Pet Is Really Thinking">
+  <meta name="twitter:description" content="AI translates your pet's thoughts into movie-style subtitles.">
+  <meta name="twitter:image" content="https://whatmypetthinks.com/og-image.png">
+
+  <!-- Favicon -->
+  <link rel="icon" type="image/png" href="icons/icon-192.png">
+  <link rel="apple-touch-icon" href="icons/icon-192.png">
+
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&family=Nunito:wght@400;600;700&display=swap" rel="stylesheet">
+
+  <style>
+    :root {
+      --amber: #F59E0B;
+      --amber-dark: #D97706;
+      --teal: #14B8A6;
+      --teal-dark: #0D9488;
+      --orange: #EA580C;
+      --charcoal: #292524;
+      --charcoal-light: #57534E;
+      --cream: #FFFBF0;
+      --purple: #8B5CF6;
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: 'Nunito', -apple-system, BlinkMacSystemFont, sans-serif;
+      color: var(--charcoal);
+      background: var(--cream);
+      -webkit-font-smoothing: antialiased;
+    }
+
+    h1, h2, h3 { font-family: 'Fredoka', 'Nunito', sans-serif; }
+
+    .container { max-width: 1100px; margin: 0 auto; padding: 0 24px; }
+
+    /* --- HERO --- */
+    .hero {
+      background: linear-gradient(135deg, var(--amber) 0%, var(--orange) 100%);
+      padding: 80px 24px 60px;
+      text-align: center;
+      color: white;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .hero::before {
+      content: '';
+      position: absolute;
+      top: -50%;
+      left: -50%;
+      width: 200%;
+      height: 200%;
+      background: radial-gradient(ellipse, rgba(255,255,255,0.08) 0%, transparent 70%);
+      pointer-events: none;
+    }
+
+    .hero h1 {
+      font-size: clamp(2.2rem, 6vw, 3.5rem);
+      font-weight: 700;
+      margin-bottom: 16px;
+      position: relative;
+    }
+
+    .hero p {
+      font-size: clamp(1.05rem, 2.5vw, 1.3rem);
+      opacity: 0.92;
+      max-width: 560px;
+      margin: 0 auto 32px;
+      line-height: 1.5;
+      position: relative;
+    }
+
+    .cta-btn {
+      display: inline-block;
+      background: white;
+      color: var(--charcoal);
+      font-family: 'Fredoka', sans-serif;
+      font-size: 1.2rem;
+      font-weight: 700;
+      padding: 16px 48px;
+      border-radius: 100px;
+      text-decoration: none;
+      transition: transform 0.15s, box-shadow 0.15s;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+      position: relative;
+    }
+
+    .cta-btn:hover { transform: translateY(-2px); box-shadow: 0 8px 30px rgba(0,0,0,0.2); }
+    .cta-btn:active { transform: scale(0.97); }
+
+    .cta-secondary {
+      display: inline-block;
+      color: rgba(255,255,255,0.9);
+      font-size: 0.95rem;
+      margin-top: 16px;
+      text-decoration: underline;
+      text-underline-offset: 3px;
+      position: relative;
+    }
+
+    /* --- HOW IT WORKS --- */
+    .how-it-works {
+      padding: 80px 24px;
+      text-align: center;
+    }
+
+    .how-it-works h2 {
+      font-size: clamp(1.8rem, 4vw, 2.4rem);
+      margin-bottom: 48px;
+    }
+
+    .steps {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+      gap: 40px;
+      max-width: 900px;
+      margin: 0 auto;
+    }
+
+    .step {
+      padding: 24px;
+    }
+
+    .step-icon {
+      font-size: 3rem;
+      margin-bottom: 16px;
+    }
+
+    .step h3 {
+      font-size: 1.2rem;
+      margin-bottom: 8px;
+    }
+
+    .step p {
+      color: var(--charcoal-light);
+      line-height: 1.6;
+    }
+
+    .step-number {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      background: var(--amber);
+      color: white;
+      font-weight: 700;
+      font-size: 1rem;
+      margin-bottom: 12px;
+    }
+
+    /* --- VOICES --- */
+    .voices {
+      background: white;
+      padding: 80px 24px;
+      text-align: center;
+    }
+
+    .voices h2 {
+      font-size: clamp(1.8rem, 4vw, 2.4rem);
+      margin-bottom: 16px;
+    }
+
+    .voices > p {
+      color: var(--charcoal-light);
+      max-width: 500px;
+      margin: 0 auto 40px;
+      line-height: 1.6;
+    }
+
+    .voice-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+      gap: 16px;
+      max-width: 700px;
+      margin: 0 auto;
+    }
+
+    .voice-card {
+      background: var(--cream);
+      border-radius: 16px;
+      padding: 20px 12px;
+      text-align: center;
+      transition: transform 0.15s;
+    }
+
+    .voice-card:hover { transform: translateY(-4px); }
+
+    .voice-emoji { font-size: 2rem; margin-bottom: 8px; }
+
+    .voice-card h4 {
+      font-family: 'Fredoka', sans-serif;
+      font-size: 0.95rem;
+      font-weight: 600;
+    }
+
+    /* --- EXAMPLES / SOCIAL PROOF --- */
+    .examples {
+      padding: 80px 24px;
+      text-align: center;
+    }
+
+    .examples h2 {
+      font-size: clamp(1.8rem, 4vw, 2.4rem);
+      margin-bottom: 16px;
+    }
+
+    .examples > p {
+      color: var(--charcoal-light);
+      max-width: 500px;
+      margin: 0 auto 40px;
+      line-height: 1.6;
+    }
+
+    .example-quotes {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 24px;
+      max-width: 900px;
+      margin: 0 auto;
+    }
+
+    .example-quote {
+      background: white;
+      border-radius: 20px;
+      padding: 28px 24px;
+      text-align: left;
+      box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+    }
+
+    .example-quote .pet-type {
+      font-size: 0.8rem;
+      font-weight: 700;
+      color: var(--amber);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      margin-bottom: 8px;
+    }
+
+    .example-quote .caption {
+      font-size: 1.1rem;
+      font-style: italic;
+      line-height: 1.5;
+      color: var(--charcoal);
+    }
+
+    .example-quote .voice-tag {
+      display: inline-block;
+      margin-top: 12px;
+      font-size: 0.8rem;
+      font-weight: 600;
+      color: var(--charcoal-light);
+      background: var(--cream);
+      padding: 4px 12px;
+      border-radius: 100px;
+    }
+
+    /* --- BATTLE --- */
+    .battle {
+      background: linear-gradient(135deg, var(--purple) 0%, #EC4899 100%);
+      padding: 60px 24px;
+      text-align: center;
+      color: white;
+    }
+
+    .battle h2 {
+      font-size: clamp(1.8rem, 4vw, 2.4rem);
+      margin-bottom: 16px;
+    }
+
+    .battle p {
+      opacity: 0.9;
+      max-width: 500px;
+      margin: 0 auto 32px;
+      line-height: 1.6;
+    }
+
+    .battle .cta-btn {
+      color: var(--purple);
+    }
+
+    /* --- FAQ --- */
+    .faq {
+      background: white;
+      padding: 80px 24px;
+    }
+
+    .faq h2 {
+      font-size: clamp(1.8rem, 4vw, 2.4rem);
+      text-align: center;
+      margin-bottom: 40px;
+    }
+
+    .faq-list {
+      max-width: 700px;
+      margin: 0 auto;
+    }
+
+    .faq-item {
+      border-bottom: 1px solid #E7E5E4;
+      padding: 20px 0;
+    }
+
+    .faq-item h3 {
+      font-size: 1.05rem;
+      margin-bottom: 8px;
+      font-weight: 600;
+    }
+
+    .faq-item p {
+      color: var(--charcoal-light);
+      line-height: 1.6;
+    }
+
+    /* --- FINAL CTA --- */
+    .final-cta {
+      background: linear-gradient(135deg, var(--amber) 0%, var(--orange) 100%);
+      padding: 80px 24px;
+      text-align: center;
+      color: white;
+    }
+
+    .final-cta h2 {
+      font-size: clamp(1.8rem, 4vw, 2.8rem);
+      margin-bottom: 16px;
+    }
+
+    .final-cta p {
+      opacity: 0.9;
+      font-size: 1.1rem;
+      margin-bottom: 32px;
+    }
+
+    /* --- FOOTER --- */
+    footer {
+      background: var(--charcoal);
+      color: rgba(255,255,255,0.6);
+      padding: 40px 24px;
+      text-align: center;
+      font-size: 0.9rem;
+    }
+
+    footer a {
+      color: rgba(255,255,255,0.8);
+      text-decoration: underline;
+      text-underline-offset: 3px;
+    }
+
+    footer .footer-links {
+      margin-bottom: 16px;
+    }
+
+    footer .footer-links a {
+      margin: 0 12px;
+    }
+
+    /* --- ANIMATIONS --- */
+    @keyframes float {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-8px); }
+    }
+
+    .float { animation: float 3s ease-in-out infinite; }
+
+    /* Mobile tweaks */
+    @media (max-width: 640px) {
+      .hero { padding: 60px 20px 48px; }
+      .cta-btn { padding: 14px 36px; font-size: 1.1rem; }
+      .steps { gap: 24px; }
+      .voice-grid { grid-template-columns: repeat(3, 1fr); gap: 10px; }
+      .voice-card { padding: 14px 8px; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- HERO -->
+  <section class="hero">
+    <div class="container">
+      <h1>What Is Your Pet<br>Really Thinking?</h1>
+      <p>Upload a photo of your pet. AI translates their inner monologue into movie-style subtitles. Share the laughs.</p>
+      <a href="https://whatmypetthinks.com" class="cta-btn">Try It Free</a>
+      <br>
+      <a href="#how-it-works" class="cta-secondary">See how it works</a>
+    </div>
+  </section>
+
+  <!-- HOW IT WORKS -->
+  <section class="how-it-works" id="how-it-works">
+    <div class="container">
+      <h2>How It Works</h2>
+      <div class="steps">
+        <div class="step">
+          <div class="step-number">1</div>
+          <div class="step-icon">📸</div>
+          <h3>Upload a Pet Photo</h3>
+          <p>Snap a photo or pick one from your camera roll. Cats, dogs, hamsters, lizards — any pet works.</p>
+        </div>
+        <div class="step">
+          <div class="step-number">2</div>
+          <div class="step-icon">🧠</div>
+          <h3>AI Reads Their Mind</h3>
+          <p>Our AI analyzes your pet's expression, posture, and surroundings to generate a hilarious inner monologue.</p>
+        </div>
+        <div class="step">
+          <div class="step-number">3</div>
+          <div class="step-icon">📤</div>
+          <h3>Share the Masterpiece</h3>
+          <p>Get a beautiful movie-style subtitle image ready for Instagram Stories, group chats, or anywhere you share.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- VOICE STYLES -->
+  <section class="voices">
+    <div class="container">
+      <h2>7 Voice Styles</h2>
+      <p>Same pet, different personality. Try them all and find the perfect voice for your furry friend.</p>
+      <div class="voice-grid">
+        <div class="voice-card">
+          <div class="voice-emoji">😂</div>
+          <h4>Funny</h4>
+        </div>
+        <div class="voice-card">
+          <div class="voice-emoji">🎬</div>
+          <h4>Narrator</h4>
+        </div>
+        <div class="voice-card">
+          <div class="voice-emoji">💀</div>
+          <h4>Gen-Z</h4>
+        </div>
+        <div class="voice-card">
+          <div class="voice-emoji">🎭</div>
+          <h4>Shakespeare</h4>
+        </div>
+        <div class="voice-card">
+          <div class="voice-emoji">😒</div>
+          <h4>Passive Agg</h4>
+        </div>
+        <div class="voice-card">
+          <div class="voice-emoji">🧠</div>
+          <h4>Therapist</h4>
+        </div>
+        <div class="voice-card">
+          <div class="voice-emoji">🌹</div>
+          <h4>Telenovela</h4>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- EXAMPLE CAPTIONS -->
+  <section class="examples">
+    <div class="container">
+      <h2>Real Captions, Real Pets</h2>
+      <p>Here's what the AI came up with. Every caption is unique to the photo.</p>
+      <div class="example-quotes">
+        <div class="example-quote">
+          <div class="pet-type">Golden Retriever</div>
+          <div class="caption">"I have been a good boy for approximately 47 seconds. I believe this warrants a treat, a belly rub, and possibly a small parade."</div>
+          <span class="voice-tag">😂 Funny</span>
+        </div>
+        <div class="example-quote">
+          <div class="pet-type">Cat on a Shelf</div>
+          <div class="caption">"I see you bought another plant. How brave. How optimistic. How delightfully naive of you."</div>
+          <span class="voice-tag">😒 Passive Agg</span>
+        </div>
+        <div class="example-quote">
+          <div class="pet-type">Sleeping Pug</div>
+          <div class="caption">"And here we observe the domesticated pug in its natural habitat, having just completed its grueling 45-minute nap before the next 3-hour nap."</div>
+          <span class="voice-tag">🎬 Narrator</span>
+        </div>
+        <div class="example-quote">
+          <div class="pet-type">Husky in Snow</div>
+          <div class="caption">"no thoughts just vibes. actually one thought. SNOW. that's it that's the whole personality bestie."</div>
+          <span class="voice-tag">💀 Gen-Z</span>
+        </div>
+        <div class="example-quote">
+          <div class="pet-type">Cat Staring at Wall</div>
+          <div class="caption">"So tell me, when did you first realize that the red dot was never something you could catch? And how did that make you feel?"</div>
+          <span class="voice-tag">🧠 Therapist</span>
+        </div>
+        <div class="example-quote">
+          <div class="pet-type">Chihuahua in Sweater</div>
+          <div class="caption">"Hark! Though mine stature be diminutive, mine fury knoweth no bounds. I am the tempest in a teacup, the thunder in a thimble!"</div>
+          <span class="voice-tag">🎭 Shakespeare</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- CAPTION BATTLE -->
+  <section class="battle">
+    <div class="container">
+      <h2>Caption Battle Mode</h2>
+      <p>Can't pick a voice? Let 3 random voices compete on the same photo. Share the battle and let your friends vote on the winner.</p>
+      <a href="https://whatmypetthinks.com" class="cta-btn">Start a Caption Battle</a>
+    </div>
+  </section>
+
+  <!-- FAQ -->
+  <section class="faq">
+    <div class="container">
+      <h2>FAQ</h2>
+      <div class="faq-list">
+        <div class="faq-item">
+          <h3>Is it free?</h3>
+          <p>Yes! You get 5 free translations to start. Share your favorites to earn more free translations.</p>
+        </div>
+        <div class="faq-item">
+          <h3>Does it work with any pet?</h3>
+          <p>Dogs, cats, hamsters, birds, fish, lizards, rabbits — if it has a face (or even if it doesn't), the AI will find something to say.</p>
+        </div>
+        <div class="faq-item">
+          <h3>Are my photos stored?</h3>
+          <p>No. Your photos are processed in memory and immediately discarded. We never store your images on our servers.</p>
+        </div>
+        <div class="faq-item">
+          <h3>Can I use it on my phone?</h3>
+          <p>Absolutely. What My Pet Thinks is a mobile-first web app that works on any phone browser. You can even add it to your home screen for an app-like experience.</p>
+        </div>
+        <div class="faq-item">
+          <h3>What AI powers this?</h3>
+          <p>What My Pet Thinks uses Anthropic's Claude AI with vision capabilities to analyze your pet's expression, body language, and surroundings.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- FINAL CTA -->
+  <section class="final-cta">
+    <div class="container">
+      <h2>Your Pet Has Opinions.</h2>
+      <p>It's time the world heard them.</p>
+      <a href="https://whatmypetthinks.com" class="cta-btn">Translate My Pet's Thoughts</a>
+    </div>
+  </section>
+
+  <!-- FOOTER -->
+  <footer>
+    <div class="footer-links">
+      <a href="https://whatmypetthinks.com/privacy">Privacy Policy</a>
+      <a href="mailto:hello@whatmypetthinks.com">Contact</a>
+    </div>
+    <p>&copy; 2026 What My Pet Thinks. All rights reserved.</p>
+  </footer>
+
+</body>
+</html>

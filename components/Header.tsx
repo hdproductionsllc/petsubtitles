@@ -17,7 +17,7 @@ export default function Header({ creditRefresh }: Props) {
   return (
     <header className="flex items-center justify-between px-3 py-2">
       <h1 className="font-[family-name:var(--font-display)] text-xl font-bold text-charcoal">
-        🐾 PetSubtitles
+        🐾 What My Pet Thinks
       </h1>
       {creditsLeft !== null && (
         <div className={`rounded-full px-3 py-1 text-sm font-semibold ${

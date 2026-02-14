@@ -29,7 +29,7 @@ async function main() {
   <rect width="${W}" height="${H}" fill="url(#overlay)"/>
 
   <!-- Top left: logo -->
-  <text x="50" y="65" font-family="Arial, Helvetica, sans-serif" font-size="32" font-weight="bold" fill="white" filter="drop-shadow(0 2px 4px rgba(0,0,0,0.5))">PetSubtitles</text>
+  <text x="50" y="65" font-family="Arial, Helvetica, sans-serif" font-size="32" font-weight="bold" fill="white" filter="drop-shadow(0 2px 4px rgba(0,0,0,0.5))">What My Pet Thinks</text>
 
   <!-- Center: headline -->
   <text x="${W / 2}" y="${H / 2 - 20}" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="52" font-weight="bold" fill="white" filter="drop-shadow(0 3px 6px rgba(0,0,0,0.6))">What Is Your Pet</text>
@@ -37,7 +37,7 @@ async function main() {
 
   <!-- Coral footer bar -->
   <rect x="0" y="${H - 60}" width="${W}" height="60" fill="${CORAL}"/>
-  <text x="50" y="${H - 22}" font-family="Arial, Helvetica, sans-serif" font-size="22" font-weight="bold" fill="white">petsubtitles.com</text>
+  <text x="50" y="${H - 22}" font-family="Arial, Helvetica, sans-serif" font-size="22" font-weight="bold" fill="white">whatmypetthinks.com</text>
   <text x="${W - 50}" y="${H - 22}" text-anchor="end" font-family="Arial, Helvetica, sans-serif" font-size="20" fill="white">AI Pet Thought Translation - Try It Free</text>
 </svg>`;
 

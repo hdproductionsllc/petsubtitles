@@ -27,12 +27,12 @@ export const viewport: Viewport = {
 };
 
 export const metadata: Metadata = {
-  metadataBase: new URL("https://petsubtitles.com"),
-  title: "PetSubtitles — Your Pet Has Opinions",
+  metadataBase: new URL("https://whatmypetthinks.com"),
+  title: "What My Pet Thinks — Find Out What Your Pet Is Really Thinking",
   description:
-    "Upload a pet photo. AI writes what they're really thinking. 7 hilarious voice styles. Free and instantly shareable.",
+    "Upload a photo of your pet and AI will translate their thoughts. Free, instant, hilarious.",
   keywords: [
-    "pet subtitles",
+    "what my pet thinks",
     "what is my pet thinking",
     "AI pet translator",
     "funny pet captions",
@@ -44,25 +44,25 @@ export const metadata: Metadata = {
   ],
   manifest: "/manifest.json",
   alternates: {
-    canonical: "https://petsubtitles.com",
+    canonical: "https://whatmypetthinks.com",
   },
   appleWebApp: {
     capable: true,
     statusBarStyle: "black-translucent",
-    title: "PetSubtitles",
+    title: "What My Pet Thinks",
   },
   openGraph: {
-    title: "Your Pet Has Opinions. Now They Have Subtitles.",
+    title: "What My Pet Thinks",
     description:
-      "Upload a pet photo. AI writes their inner monologue as movie-style subtitles. Funny, shareable, and way too accurate.",
-    url: "https://petsubtitles.com",
-    siteName: "PetSubtitles",
+      "Find out what your pet is really thinking",
+    url: "https://whatmypetthinks.com",
+    siteName: "What My Pet Thinks",
     images: [
       {
         url: "/og-image.png",
         width: 1200,
         height: 630,
-        alt: "PetSubtitles — Your pet has opinions. Now they have subtitles.",
+        alt: "What My Pet Thinks — Find out what your pet is really thinking",
       },
     ],
     type: "website",
@@ -70,9 +70,9 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: "Your Pet Has Opinions 🐾",
+    title: "What My Pet Thinks 🐾",
     description:
-      "Upload a pet photo. AI writes their inner monologue as movie-style subtitles. Funny, shareable, and way too accurate.",
+      "Find out what your pet is really thinking",
     images: ["/og-image.png"],
   },
   icons: {
@@ -131,8 +131,8 @@ export default function RootLayout({
             __html: JSON.stringify({
               "@context": "https://schema.org",
               "@type": "WebApplication",
-              name: "PetSubtitles",
-              url: "https://petsubtitles.com",
+              name: "What My Pet Thinks",
+              url: "https://whatmypetthinks.com",
               description:
                 "Upload a photo of your pet and AI translates their inner monologue into hilarious movie-style subtitles.",
               applicationCategory: "Entertainment",
@@ -142,7 +142,7 @@ export default function RootLayout({
                 price: "0",
                 priceCurrency: "USD",
               },
-              image: "https://petsubtitles.com/og-image.png",
+              image: "https://whatmypetthinks.com/og-image.png",
             }),
           }}
         />

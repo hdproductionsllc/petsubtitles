@@ -560,7 +560,7 @@ export default function Home() {
 
       {/* Footer */}
       <footer className="px-3 pb-4 pt-1.5 text-center text-xs text-charcoal/30">
-        Made with 🐾 by PetSubtitles
+        Made with 🐾 by What My Pet Thinks
         <span className="mx-1">·</span>
         <a href="/privacy" className="underline hover:text-charcoal/50">Privacy</a>
       </footer>

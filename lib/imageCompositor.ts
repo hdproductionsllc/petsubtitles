@@ -2,9 +2,9 @@
 
 import QRCode from "qrcode";
 
-const BRAND_NAME = "PetSubtitles";
-const BRAND_URL = "petsubtitles.com";
-const BRAND_FULL_URL = "https://petsubtitles.com";
+const BRAND_NAME = "What My Pet Thinks";
+const BRAND_URL = "whatmypetthinks.com";
+const BRAND_FULL_URL = "https://whatmypetthinks.com";
 const CORAL = "#FF6B4A";
 const FOOTER_HEIGHT = 44;
 
@@ -195,7 +195,7 @@ function drawStandard(
   const footerCenterY = h + footerH * 0.62;
   ctx.fillStyle = "white";
 
-  // Left: paw + petsubtitles.com
+  // Left: paw + whatmypetthinks.com
   ctx.textAlign = "left";
   ctx.font = `bold ${brandFontSize}px ${fontFamily}`;
   ctx.fillText(`🐾 ${BRAND_URL}`, padding, footerCenterY);

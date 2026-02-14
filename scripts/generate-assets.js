@@ -1,5 +1,5 @@
 /**
- * Asset generator for PetSubtitles
+ * Asset generator for What My Pet Thinks
  * Generates placeholder icons and sample images as SVG → PNG via sharp or inline SVGs.
  * Run: node scripts/generate-assets.js
  *
@@ -53,8 +53,8 @@ function generateOgImage() {
   </defs>
   <rect width="1200" height="630" fill="url(#bg)"/>
   ${makePawSvg(200, 315, 1.5)}
-  <text x="320" y="280" font-family="sans-serif" font-weight="700" font-size="72" fill="white">PetSubtitles</text>
-  <text x="320" y="350" font-family="sans-serif" font-weight="400" font-size="32" fill="white" opacity="0.9">What Is Your Pet Really Thinking?</text>
+  <text x="320" y="280" font-family="sans-serif" font-weight="700" font-size="72" fill="white">What My Pet Thinks</text>
+  <text x="320" y="350" font-family="sans-serif" font-weight="400" font-size="32" fill="white" opacity="0.9">Find out what your pet is really thinking</text>
   <text x="320" y="420" font-family="sans-serif" font-weight="400" font-size="24" fill="white" opacity="0.7">AI-powered pet thought translation</text>
 </svg>`;
 }
@@ -82,8 +82,8 @@ function generateSampleSvg(index, caption) {
 
   <!-- Branded footer -->
   <rect x="0" y="450" width="400" height="50" fill="${AMBER}"/>
-  <text x="20" y="482" font-family="sans-serif" font-weight="700" font-size="16" fill="white">🐾 PetSubtitles</text>
-  <text x="380" y="482" font-family="sans-serif" font-size="14" fill="white" text-anchor="end">petsubtitles.com</text>
+  <text x="20" y="482" font-family="sans-serif" font-weight="700" font-size="16" fill="white">🐾 whatmypetthinks.com</text>
+  <text x="380" y="482" font-family="sans-serif" font-size="14" fill="white" text-anchor="end">whatmypetthinks.com</text>
 </svg>`;
 }
 

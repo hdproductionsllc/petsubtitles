@@ -10,7 +10,7 @@ const path = require("path");
 const fs = require("fs");
 
 const CORAL = "#FF6B4A";
-const BRAND_URL = "petsubtitles.com";
+const BRAND_URL = "whatmypetthinks.com";
 
 const SAMPLES = [
   {

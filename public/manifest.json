@@ -1,7 +1,7 @@
 {
-  "name": "PetSubtitles — What Is Your Pet Really Thinking?",
-  "short_name": "PetSubtitles",
-  "description": "Translate your pet's thoughts with AI-powered subtitles",
+  "name": "What My Pet Thinks",
+  "short_name": "PetThinks",
+  "description": "Find out what your pet is really thinking",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#FFFBF0",

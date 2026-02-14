@@ -4,14 +4,14 @@ export function canUseWebShare(): boolean {
   return typeof navigator !== "undefined" && !!navigator.share;
 }
 
-/** Generate descriptive filename: petsubtitles-funny-20260213-143022.png */
+/** Generate descriptive filename: whatmypetthinks-funny-20260213-143022.png */
 export function generateFilename(voiceStyle?: string, isStory?: boolean): string {
   const now = new Date();
   const date = now.toISOString().slice(0, 10).replace(/-/g, "");
   const time = now.toTimeString().slice(0, 8).replace(/:/g, "");
   const voice = voiceStyle || "funny";
   const suffix = isStory ? "-story" : "";
-  return `petsubtitles-${voice}${suffix}-${date}-${time}.png`;
+  return `whatmypetthinks-${voice}${suffix}-${date}-${time}.png`;
 }
 
 async function dataUrlToBlob(dataUrl: string): Promise<Blob> {
@@ -33,8 +33,8 @@ export async function shareImage(
     const file = new File([blob], filename, { type: "image/png" });
 
     await navigator.share({
-      title: "PetSubtitles",
-      text: `Look what my pet is really thinking 😂\n\nhttps://petsubtitles.com`,
+      title: "What My Pet Thinks",
+      text: `Look what my pet thinks 😂 #WhatMyPetThinks\n\nhttps://whatmypetthinks.com`,
       files: [file],
     });
     return true;
@@ -57,7 +57,7 @@ export function downloadImage(dataUrl: string, filename?: string) {
 
 export async function copyLinkToClipboard(): Promise<boolean> {
   try {
-    await navigator.clipboard.writeText("https://petsubtitles.com");
+    await navigator.clipboard.writeText("https://whatmypetthinks.com");
     return true;
   } catch {
     return false;
@@ -84,13 +84,13 @@ export function openTikTok(): void {
 
 /** Open X/Twitter tweet compose with pre-filled text */
 export function shareToX(caption: string): void {
-  const text = `"${caption}" 😂\n\nTranslate your pet's thoughts at petsubtitles.com`;
+  const text = `"${caption}" 😂\n\nFind out what your pet thinks 😂 #WhatMyPetThinks whatmypetthinks.com`;
   const url = `https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}`;
   window.open(url, "_blank");
 }
 
 /** Open Facebook sharer */
 export function shareToFacebook(): void {
-  const url = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent("https://petsubtitles.com")}`;
+  const url = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent("https://whatmypetthinks.com")}`;
   window.open(url, "_blank");
 }

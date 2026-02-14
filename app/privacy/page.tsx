@@ -1,8 +1,8 @@
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "Privacy Policy — PetSubtitles",
-  description: "Privacy policy for PetSubtitles, the AI pet thought translator.",
+  title: "Privacy Policy — What My Pet Thinks",
+  description: "Privacy policy for What My Pet Thinks, the AI pet thought translator.",
 };
 
 export default function PrivacyPage() {
@@ -26,7 +26,7 @@ export default function PrivacyPage() {
         <section>
           <h2 className="text-lg font-bold text-charcoal mb-2">Local Storage</h2>
           <p>
-            PetSubtitles stores the following data locally on your device (never on our servers):
+            What My Pet Thinks stores the following data locally on your device (never on our servers):
           </p>
           <ul className="list-disc pl-6 mt-2 space-y-1">
             <li>Your recent translation history (thumbnails and captions)</li>
@@ -36,7 +36,7 @@ export default function PrivacyPage() {
           </ul>
           <p className="mt-2">
             You can clear this data at any time by clearing your browser&apos;s site data for
-            petsubtitles.com.
+            whatmypetthinks.com.
           </p>
         </section>
 
@@ -70,7 +70,7 @@ export default function PrivacyPage() {
         <section>
           <h2 className="text-lg font-bold text-charcoal mb-2">Analytics</h2>
           <p>
-            We use Google Analytics 4 (GA4) to understand how people use PetSubtitles. GA4 collects
+            We use Google Analytics 4 (GA4) to understand how people use What My Pet Thinks. GA4 collects
             anonymous usage data such as page views, button clicks, and device type. No photos or
             captions are sent to Google. You can opt out of GA4 tracking by using a browser extension
             like{" "}
@@ -89,7 +89,7 @@ export default function PrivacyPage() {
         <section>
           <h2 className="text-lg font-bold text-charcoal mb-2">Cookies</h2>
           <p>
-            PetSubtitles does not use cookies. All preferences are stored in your browser&apos;s
+            What My Pet Thinks does not use cookies. All preferences are stored in your browser&apos;s
             localStorage.
           </p>
         </section>
@@ -97,7 +97,7 @@ export default function PrivacyPage() {
         <section>
           <h2 className="text-lg font-bold text-charcoal mb-2">Children&apos;s Privacy</h2>
           <p>
-            PetSubtitles is a general audience app. We do not knowingly collect personal information
+            What My Pet Thinks is a general audience app. We do not knowingly collect personal information
             from children under 13.
           </p>
         </section>
@@ -115,10 +115,10 @@ export default function PrivacyPage() {
           <p>
             Questions about this policy? Reach us at{" "}
             <a
-              href="mailto:hello@petsubtitles.com"
+              href="mailto:hello@whatmypetthinks.com"
               className="text-teal underline hover:text-teal/80"
             >
-              hello@petsubtitles.com
+              hello@whatmypetthinks.com
             </a>
             .
           </p>
@@ -130,7 +130,7 @@ export default function PrivacyPage() {
           href="/"
           className="text-teal font-bold hover:text-teal/80"
         >
-          &larr; Back to PetSubtitles
+          &larr; Back to What My Pet Thinks
         </a>
       </div>
     </main>

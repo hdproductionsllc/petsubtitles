@@ -1,5 +1,5 @@
 {
-  "name": "pet-subtitles",
+  "name": "what-my-pet-thinks",
   "version": "0.1.0",
   "private": true,
   "scripts": {
@@ -7,7 +7,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "deploy": "npm run build && vercel --prod --yes --name petsubtitles",
+    "deploy": "npm run build && vercel --prod --yes --name whatmypetthinks",
     "generate-samples": "node scripts/generate-samples.js && node scripts/generate-og.js"
   },
   "dependencies": {

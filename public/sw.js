@@ -1,4 +1,4 @@
-const CACHE_NAME = "petsubtitles-v3";
+const CACHE_NAME = "whatmypetthinks-v1";
 const STATIC_ASSETS = [
   "/",
   "/manifest.json",

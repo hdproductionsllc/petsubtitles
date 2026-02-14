@@ -37,7 +37,7 @@ async function generateSplash(name, w, h) {
         </linearGradient>
       </defs>
       <rect width="${w}" height="${h}" fill="url(#bg)"/>
-      <text x="${w/2}" y="${h/2 - subFontSize}" text-anchor="middle" fill="white" font-family="Arial, sans-serif" font-weight="bold" font-size="${fontSize}">🐾 PetSubtitles</text>
+      <text x="${w/2}" y="${h/2 - subFontSize}" text-anchor="middle" fill="white" font-family="Arial, sans-serif" font-weight="bold" font-size="${fontSize}">🐾 What My Pet Thinks</text>
       <text x="${w/2}" y="${h/2 + subFontSize * 1.5}" text-anchor="middle" fill="rgba(255,255,255,0.8)" font-family="Arial, sans-serif" font-size="${subFontSize}">Your pet has opinions.</text>
     </svg>
   `;

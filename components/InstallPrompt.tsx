@@ -98,7 +98,7 @@ export default function InstallPrompt() {
         <div className="mx-auto max-w-lg rounded-t-3xl bg-white px-4 pb-6 pt-4 shadow-2xl">
           <div className="mb-1 flex items-center justify-between">
             <p className="font-[family-name:var(--font-display)] text-base font-bold text-charcoal">
-              Install PetSubtitles
+              Install What My Pet Thinks
             </p>
             <button
               onClick={handleDismiss}
@@ -175,7 +175,7 @@ export default function InstallPrompt() {
             <img src="/icons/icon-192.png" alt="" className="h-10 w-10 rounded-xl" />
             <div>
               <p className="font-[family-name:var(--font-display)] text-base font-bold text-charcoal">
-                Install PetSubtitles
+                Install What My Pet Thinks
               </p>
               <p className="text-xs text-charcoal-light">
                 Launches instantly, works offline

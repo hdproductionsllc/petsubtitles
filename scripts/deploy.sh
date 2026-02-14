@@ -1,5 +1,5 @@
 #!/bin/bash
-# PetSubtitles deploy script
+# What My Pet Thinks deploy script
 # Builds, verifies, and deploys to Vercel production
 #
 # Usage: ./scripts/deploy.sh
@@ -7,7 +7,7 @@
 
 set -e
 
-echo "🐾 PetSubtitles Deploy"
+echo "🐾 What My Pet Thinks Deploy"
 echo "======================"
 echo ""
 
@@ -18,7 +18,7 @@ echo ""
 
 # Step 2: Deploy to Vercel
 echo "🚀 Deploying to Vercel production..."
-vercel --prod --yes --name petsubtitles
+vercel --prod --yes --name whatmypetthinks
 echo ""
 
-echo "✅ Deployed! Check https://petsubtitles.com"
+echo "✅ Deployed! Check https://whatmypetthinks.com"
