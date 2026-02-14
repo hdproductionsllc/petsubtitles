@@ -72,7 +72,7 @@ export default function Home() {
   const [petPronouns, setPetPronouns] = useState("");
 
   const photoCaptureRef = useRef<PhotoCaptureHandle>(null);
-  const hasFiredFirstResult = useRef(false);
+
 
   // Track page load + load saved personalization
   useEffect(() => {
@@ -254,11 +254,8 @@ export default function Home() {
 
       setAppState("result");
 
-      // Signal first successful translation for install prompt timing
-      if (!hasFiredFirstResult.current) {
-        hasFiredFirstResult.current = true;
-        window.dispatchEvent(new CustomEvent("petsubtitles:first-result"));
-      }
+      // Signal successful translation for install prompt timing
+      window.dispatchEvent(new CustomEvent("petsubtitles:first-result"));
     } catch (err) {
       setError(
         err instanceof Error

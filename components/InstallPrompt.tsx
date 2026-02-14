@@ -30,16 +30,20 @@ export default function InstallPrompt() {
     const isiOS = /iphone|ipad|ipod/i.test(ua) && !("beforeinstallprompt" in window);
     setIsIOS(isiOS);
 
-    // Show banner after first successful translation (with 2s delay),
+    // Show banner after 2+ successful translations (with 2s delay),
     // or fall back to 60s if the user never translates
     let showTimer: ReturnType<typeof setTimeout> | null = null;
+    let translationCount = 0;
 
-    const onFirstResult = () => {
-      if (showTimer) clearTimeout(showTimer);
-      showTimer = setTimeout(() => setShowBanner(true), 2000);
+    const onResult = () => {
+      translationCount++;
+      if (translationCount >= 2) {
+        if (showTimer) clearTimeout(showTimer);
+        showTimer = setTimeout(() => setShowBanner(true), 2000);
+      }
     };
 
-    window.addEventListener("petsubtitles:first-result", onFirstResult);
+    window.addEventListener("petsubtitles:first-result", onResult);
 
     // Fallback: show after 60s regardless
     const fallbackTimer = setTimeout(() => {
@@ -56,14 +60,14 @@ export default function InstallPrompt() {
 
       return () => {
         window.removeEventListener("beforeinstallprompt", handler);
-        window.removeEventListener("petsubtitles:first-result", onFirstResult);
+        window.removeEventListener("petsubtitles:first-result", onResult);
         clearTimeout(fallbackTimer);
         if (showTimer) clearTimeout(showTimer);
       };
     }
 
     return () => {
-      window.removeEventListener("petsubtitles:first-result", onFirstResult);
+      window.removeEventListener("petsubtitles:first-result", onResult);
       clearTimeout(fallbackTimer);
       if (showTimer) clearTimeout(showTimer);
     };
