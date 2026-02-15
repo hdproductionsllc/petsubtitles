@@ -23,6 +23,9 @@ import {
   hasCredits,
   useCredit,
   earnShareCredit,
+  isPremium,
+  isPremiumExpired,
+  reverifyPremium,
 } from "@/lib/usageTracker";
 import { trackEvent } from "@/lib/analytics";
 import type { VoiceStyle } from "@/lib/anthropic";
@@ -76,7 +79,7 @@ export default function Home() {
   const photoCaptureRef = useRef<PhotoCaptureHandle>(null);
 
 
-  // Track page load + load saved personalization + check first-time flag
+  // Track page load + load saved personalization + check first-time flag + reverify premium
   useEffect(() => {
     trackEvent("page_load");
     const saved = loadSavedPersonalization();
@@ -84,6 +87,10 @@ export default function Home() {
     if (saved.pronouns) setPetPronouns(saved.pronouns);
     if (localStorage.getItem("wmpt_has_translated")) {
       setIsFirstTime(false);
+    }
+    // Re-verify premium subscription if cached period has expired
+    if (isPremium() && isPremiumExpired()) {
+      reverifyPremium().then(() => refreshCredits());
     }
   }, []);
 
