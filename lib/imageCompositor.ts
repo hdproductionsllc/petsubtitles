@@ -551,7 +551,7 @@ function drawConvo(
   ctx.globalAlpha = 1;
 
   // Circular pet photo with shadow
-  const photoSize = 360;
+  const photoSize = 400;
   const photoX = (W - photoSize) / 2;
   const photoY = 80;
   const photoCenterX = W / 2;
