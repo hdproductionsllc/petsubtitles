@@ -17,9 +17,10 @@ interface Props {
   onClick: () => void;
   isLoading: boolean;
   disabled: boolean;
+  label?: string;
 }
 
-export default function TranslateButton({ onClick, isLoading, disabled }: Props) {
+export default function TranslateButton({ onClick, isLoading, disabled, label }: Props) {
   const [messageIndex, setMessageIndex] = useState(0);
 
   useEffect(() => {
@@ -59,7 +60,7 @@ export default function TranslateButton({ onClick, isLoading, disabled }: Props)
             </span>
           </div>
         ) : (
-          "🐾 Translate My Pet's Thoughts"
+          label || "🐾 Translate My Pet's Thoughts"
         )}
       </button>
     </div>

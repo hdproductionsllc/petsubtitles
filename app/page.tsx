@@ -10,7 +10,7 @@ import ResultDisplay from "@/components/ResultDisplay";
 import ShareButtons from "@/components/ShareButtons";
 import ExampleCarousel from "@/components/ExampleCarousel";
 import SocialProof from "@/components/SocialProof";
-import PersonalizeSection, { loadSavedPersonalization } from "@/components/PersonalizeSection";
+import PersonalizeSection, { loadSavedPersonalization, savePersonalization } from "@/components/PersonalizeSection";
 import RecentHistory, {
   saveToHistory,
   createThumbnail,
@@ -69,16 +69,22 @@ export default function Home() {
   const [convoMessages, setConvoMessages] = useState<ConvoMessage[]>([]);
   const [petName, setPetName] = useState("");
   const [petPronouns, setPetPronouns] = useState("");
+  const [isFirstTime, setIsFirstTime] = useState(true);
+  const [showNameInput, setShowNameInput] = useState(false);
+  const [nameInputValue, setNameInputValue] = useState("");
 
   const photoCaptureRef = useRef<PhotoCaptureHandle>(null);
 
 
-  // Track page load + load saved personalization
+  // Track page load + load saved personalization + check first-time flag
   useEffect(() => {
     trackEvent("page_load");
     const saved = loadSavedPersonalization();
     if (saved.name) setPetName(saved.name);
     if (saved.pronouns) setPetPronouns(saved.pronouns);
+    if (localStorage.getItem("wmpt_has_translated")) {
+      setIsFirstTime(false);
+    }
   }, []);
 
   // Track online/offline
@@ -173,11 +179,12 @@ export default function Home() {
     }
   }, [imageData]);
 
-  const doTranslate = useCallback(async (voice?: VoiceStyle) => {
+  const doTranslate = useCallback(async (voice?: VoiceStyle, nameOverride?: string) => {
     if (!imageData) return;
 
     const voiceToUse = voice ?? selectedVoice;
     const format = selectedFormat;
+    const nameToUse = nameOverride ?? petName;
 
     // Check credits
     if (!hasCredits()) {
@@ -202,7 +209,7 @@ export default function Home() {
           imageBase64: imageData.base64,
           mediaType: imageData.mediaType,
           voiceStyle: voiceToUse,
-          petName: petName || undefined,
+          petName: nameToUse || undefined,
           pronouns: petPronouns || undefined,
           format,
         }),
@@ -222,7 +229,7 @@ export default function Home() {
         trackEvent("convo_received", { voice_style: voiceToUse });
 
         try {
-          composited = await compositeConvo(imageData.originalDataUrl, data.messages, petName || undefined);
+          composited = await compositeConvo(imageData.originalDataUrl, data.messages, nameToUse || undefined);
         } catch {
           throw new Error("Couldn't create the conversation image. Try a different photo.");
         }
@@ -256,6 +263,12 @@ export default function Home() {
       setHistoryKey((k) => k + 1);
 
       setAppState("result");
+
+      // Mark first translation complete
+      if (!localStorage.getItem("wmpt_has_translated")) {
+        localStorage.setItem("wmpt_has_translated", "true");
+        trackEvent("first_translation");
+      }
 
       // Signal successful translation for install prompt timing
       window.dispatchEvent(new CustomEvent("petsubtitles:first-result"));
@@ -380,6 +393,16 @@ export default function Home() {
     doTranslate();
   }, [doTranslate, selectedFormat]);
 
+  /** First-time user adds pet name on result screen — save and re-translate */
+  const handleFirstTimeNameSubmit = useCallback(() => {
+    const name = nameInputValue.trim().slice(0, 20);
+    if (!name) return;
+    setPetName(name);
+    savePersonalization(name, petPronouns);
+    setShowNameInput(false);
+    doTranslate(undefined, name);
+  }, [nameInputValue, petPronouns, doTranslate]);
+
   const showingResult = appState === "result" || appState === "battle_result";
   const showingLoading = appState === "translating" || appState === "battle_translating" || appState === "scanning";
 
@@ -432,8 +455,8 @@ export default function Home() {
         </div>
       )}
 
-      {/* Personalization section — show when photo selected */}
-      {appState === "photo_selected" && (
+      {/* Personalization section — show when photo selected (returning users only) */}
+      {appState === "photo_selected" && !isFirstTime && (
         <PersonalizeSection
           petName={petName}
           petPronouns={petPronouns}
@@ -442,8 +465,8 @@ export default function Home() {
         />
       )}
 
-      {/* Format selector — show when photo selected or in result state (not battle) */}
-      {(appState === "photo_selected" || appState === "result") && (
+      {/* Format selector — show when photo selected or in result state (returning users only) */}
+      {(appState === "photo_selected" || appState === "result") && !isFirstTime && (
         <div className="flex justify-center gap-1 px-4 py-2">
           <button
             onClick={() => setSelectedFormat("caption")}
@@ -468,8 +491,8 @@ export default function Home() {
         </div>
       )}
 
-      {/* Voice selector — show when photo selected, translating, OR in result state (not battle) */}
-      {(appState === "photo_selected" || appState === "translating" || appState === "result") && (
+      {/* Voice selector — show when photo selected, translating, OR in result state (returning users only) */}
+      {(appState === "photo_selected" || appState === "translating" || appState === "result") && !isFirstTime && (
         <VoiceSelector
           selected={selectedVoice}
           onSelect={handleVoiceSelect}
@@ -483,16 +506,19 @@ export default function Home() {
             onClick={() => doTranslate()}
             isLoading={false}
             disabled={!imageData || isOffline}
+            label={isFirstTime ? "What's your pet thinking? 🐾" : undefined}
           />
-          <div className="px-4 pb-2">
-            <button
-              onClick={doBattle}
-              disabled={!imageData || isOffline}
-              className="btn-press w-full rounded-2xl bg-gradient-to-r from-purple-500 to-pink-500 py-3.5 text-base font-bold text-white shadow-lg transition hover:shadow-xl disabled:opacity-50 min-h-[48px]"
-            >
-              Caption Battle — 3 Voices, 1 Photo
-            </button>
-          </div>
+          {!isFirstTime && (
+            <div className="px-4 pb-2">
+              <button
+                onClick={doBattle}
+                disabled={!imageData || isOffline}
+                className="btn-press w-full rounded-2xl bg-gradient-to-r from-purple-500 to-pink-500 py-3.5 text-base font-bold text-white shadow-lg transition hover:shadow-xl disabled:opacity-50 min-h-[48px]"
+              >
+                Caption Battle — 3 Voices, 1 Photo
+              </button>
+            </div>
+          )}
         </>
       )}
 
@@ -551,8 +577,39 @@ export default function Home() {
             <ResultDisplay imageDataUrl={standardImage} caption={caption} />
           </div>
 
-          {/* Personalization nudge if no name was set */}
-          {!petName && (
+          {/* Inline name prompt — interactive for first-timers, static for returning users */}
+          {!petName && isFirstTime && (
+            <div className="mx-3 mt-1.5 rounded-xl bg-amber/5 px-3 py-2 text-center animate-fade-up">
+              {showNameInput ? (
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    value={nameInputValue}
+                    onChange={(e) => setNameInputValue(e.target.value.slice(0, 20))}
+                    onKeyDown={(e) => e.key === "Enter" && handleFirstTimeNameSubmit()}
+                    placeholder="e.g. Biscuit"
+                    autoFocus
+                    className="flex-1 rounded-xl border border-gray-200 bg-white px-3 py-2 text-sm outline-none focus:border-amber focus:ring-2 focus:ring-amber/20"
+                  />
+                  <button
+                    onClick={handleFirstTimeNameSubmit}
+                    disabled={!nameInputValue.trim()}
+                    className="rounded-xl bg-coral px-4 py-2 text-sm font-bold text-white disabled:opacity-50"
+                  >
+                    Go
+                  </button>
+                </div>
+              ) : (
+                <button
+                  onClick={() => setShowNameInput(true)}
+                  className="text-sm font-semibold text-coral hover:underline"
+                >
+                  Add your pet&apos;s name for a personalized conversation &rarr;
+                </button>
+              )}
+            </div>
+          )}
+          {!petName && !isFirstTime && (
             <div className="mx-3 mt-1.5 rounded-xl bg-amber/5 px-3 py-1.5 text-center">
               <p className="text-xs text-charcoal-light">
                 Add your pet&apos;s name for personalized captions

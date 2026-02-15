@@ -26,7 +26,7 @@ export default function ExampleCarousel({ onTryIt }: Props) {
         What is your pet <span className="text-coral">REALLY</span> thinking?
       </h2>
       <p className="text-center text-sm text-charcoal-light mb-4">
-        Your pet has opinions. Now they have subtitles.
+        Upload a photo and find out what they&apos;d say.
       </p>
 
       {/* Example card — real composited image */}

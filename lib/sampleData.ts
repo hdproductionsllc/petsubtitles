@@ -47,8 +47,8 @@ export const SAMPLE_EXAMPLES: SampleExample[] = [
   {
     id: "cat-stare",
     petType: "House Cat",
-    voiceStyle: "Therapist",
-    voiceEmoji: "🧠",
+    voiceStyle: "Silly",
+    voiceEmoji: "😂",
     caption: "You have 30 seconds to explain why you stopped petting me. Choose your words carefully.",
     image: "/samples/cat-stare.jpg",
     thumb: "/samples/cat-stare-thumb.jpg",
@@ -56,7 +56,7 @@ export const SAMPLE_EXAMPLES: SampleExample[] = [
   {
     id: "dog-begging",
     petType: "Husky",
-    voiceStyle: "Narrator",
+    voiceStyle: "Dramatic Narrator",
     voiceEmoji: "🎬",
     caption: "I can smell that you cut the cheese 4.7 seconds ago. The clock is ticking, Karen.",
     image: "/samples/dog-begging.jpg",
@@ -65,8 +65,8 @@ export const SAMPLE_EXAMPLES: SampleExample[] = [
   {
     id: "kitten-surprised",
     petType: "Scottish Fold",
-    voiceStyle: "Shakespeare",
-    voiceEmoji: "🎭",
+    voiceStyle: "Dramatic Narrator",
+    voiceEmoji: "🎬",
     caption: "SOMETHING MOVED UNDER THE BLANKET AND I AM NOT OKAY.",
     image: "/samples/kitten-surprised.jpg",
     thumb: "/samples/kitten-surprised-thumb.jpg",
