@@ -97,7 +97,9 @@ export async function POST(request: NextRequest) {
     }
 
     // Validate optional personalization
-    const cleanName = typeof petName === "string" ? petName.slice(0, 20).trim() : undefined;
+    const cleanName = typeof petName === "string"
+      ? petName.replace(/[^a-zA-Z0-9 .\-']/g, "").slice(0, 20).trim() || undefined
+      : undefined;
     const validPronouns = ["he/him", "she/her", "they/them"];
     const cleanPronouns = validPronouns.includes(pronouns) ? pronouns : undefined;
 
