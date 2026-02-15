@@ -288,6 +288,7 @@ export default function Home() {
         if (nameToUse) savePersonalization(nameToUse, petPronouns);
         trackEvent("first_translation");
       }
+      setIsFirstTime(false);
 
       // Signal successful translation for install prompt timing
       window.dispatchEvent(new CustomEvent("petsubtitles:first-result"));
