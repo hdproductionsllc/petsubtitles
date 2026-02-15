@@ -32,6 +32,20 @@ type AppState = "idle" | "photo_selected" | "scanning" | "translating" | "battle
 
 const ALL_VOICES: VoiceStyle[] = ["funny", "dramatic", "genz", "passive"];
 
+const VOICE_DISPLAY_NAMES: Record<VoiceStyle, string> = {
+  funny: "Silly",
+  passive: "Passive Agg",
+  genz: "Gen-Z",
+  dramatic: "Dramatic Narrator",
+};
+
+const VOICE_SUGGESTIONS: Record<VoiceStyle, VoiceStyle> = {
+  funny: "passive",
+  passive: "genz",
+  genz: "dramatic",
+  dramatic: "passive",
+};
+
 /** Pick n random voices from the list */
 function pickRandomVoices(n: number, exclude?: VoiceStyle): VoiceStyle[] {
   const pool = exclude ? ALL_VOICES.filter(v => v !== exclude) : [...ALL_VOICES];
@@ -72,6 +86,7 @@ export default function Home() {
   const [isFirstTime, setIsFirstTime] = useState(true);
   const [showNameInput, setShowNameInput] = useState(false);
   const [nameInputValue, setNameInputValue] = useState("");
+  const [usedVoices, setUsedVoices] = useState<VoiceStyle[]>([]);
 
   const photoCaptureRef = useRef<PhotoCaptureHandle>(null);
 
@@ -264,6 +279,9 @@ export default function Home() {
 
       setAppState("result");
 
+      // Track used voice for smart suggestions
+      setUsedVoices((prev) => prev.includes(voiceToUse) ? prev : [...prev, voiceToUse]);
+
       // Mark first translation complete
       if (!localStorage.getItem("wmpt_has_translated")) {
         localStorage.setItem("wmpt_has_translated", "true");
@@ -402,6 +420,21 @@ export default function Home() {
     setShowNameInput(false);
     doTranslate(undefined, name);
   }, [nameInputValue, petPronouns, doTranslate]);
+
+  // Smart voice suggestion: pick next untried voice, or use the suggestion map
+  const suggestedVoice: VoiceStyle = (() => {
+    const suggestion = VOICE_SUGGESTIONS[selectedVoice];
+    if (!usedVoices.includes(suggestion)) return suggestion;
+    const untried = ALL_VOICES.find((v) => !usedVoices.includes(v));
+    return untried ?? "funny";
+  })();
+  const suggestedVoiceName = VOICE_DISPLAY_NAMES[suggestedVoice];
+
+  const handleTryVoice = useCallback(() => {
+    trackEvent("try_voice_tapped", { voice_style: suggestedVoice });
+    setSelectedVoice(suggestedVoice);
+    doTranslate(suggestedVoice);
+  }, [suggestedVoice, doTranslate]);
 
   const showingResult = appState === "result" || appState === "battle_result";
   const showingLoading = appState === "translating" || appState === "battle_translating" || appState === "scanning";
@@ -625,6 +658,8 @@ export default function Home() {
             isConvo={selectedFormat === "convo"}
             onShareComplete={handleShareComplete}
             onDifferentCaption={imageData ? handleDifferentCaption : undefined}
+            onTryVoice={imageData ? handleTryVoice : undefined}
+            suggestedVoiceName={suggestedVoiceName}
             onNewPhoto={handleNewPhoto}
           />
         </>

@@ -23,6 +23,8 @@ interface Props {
   isConvo?: boolean;
   onShareComplete?: () => void;
   onDifferentCaption?: () => void;
+  onTryVoice?: () => void;
+  suggestedVoiceName?: string;
   onNewPhoto?: () => void;
 }
 
@@ -34,6 +36,8 @@ export default function ShareButtons({
   isConvo,
   onShareComplete,
   onDifferentCaption,
+  onTryVoice,
+  suggestedVoiceName,
   onNewPhoto,
 }: Props) {
   const [toast, setToast] = useState<string | null>(null);
@@ -225,25 +229,38 @@ export default function ShareButtons({
         </div>
       )}
 
-      {/* Action buttons row */}
-      <div className="flex gap-2">
-        {onDifferentCaption && (
-          <button
-            onClick={onDifferentCaption}
-            className="btn-press flex-1 rounded-xl bg-gray-100 px-3 py-3 text-sm font-semibold text-charcoal transition hover:bg-gray-200 min-h-[44px]"
-          >
-            🔄 Different {isConvo ? "Convo" : "Caption"}
-          </button>
-        )}
-        {onNewPhoto && (
-          <button
-            onClick={onNewPhoto}
-            className="btn-press flex-1 rounded-xl bg-gray-100 px-3 py-3 text-sm font-semibold text-charcoal transition hover:bg-gray-200 min-h-[44px]"
-          >
-            📷 New Photo
-          </button>
-        )}
-      </div>
+      {/* Regeneration buttons */}
+      {(onDifferentCaption || onTryVoice) && (
+        <div className="flex gap-2 mb-2">
+          {onDifferentCaption && (
+            <button
+              onClick={onDifferentCaption}
+              className="btn-press rounded-xl border-2 border-gray-200 bg-white px-3 py-3 text-sm font-semibold text-charcoal transition hover:bg-gray-50 min-h-[44px]"
+              style={{ flex: "0 0 35%" }}
+            >
+              🔄 Try Again
+            </button>
+          )}
+          {onTryVoice && suggestedVoiceName && (
+            <button
+              onClick={onTryVoice}
+              className="btn-press flex-1 rounded-xl bg-coral px-3 py-3 text-sm font-bold text-white shadow transition hover:bg-coral-dark min-h-[44px]"
+            >
+              🎭 Try {suggestedVoiceName}
+            </button>
+          )}
+        </div>
+      )}
+
+      {/* New photo button */}
+      {onNewPhoto && (
+        <button
+          onClick={onNewPhoto}
+          className="btn-press w-full rounded-xl bg-gray-100 px-3 py-3 text-sm font-semibold text-charcoal transition hover:bg-gray-200 min-h-[44px]"
+        >
+          📷 New Photo
+        </button>
+      )}
 
       {/* Toast */}
       {toast && (
