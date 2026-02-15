@@ -1,4 +1,70 @@
-/** Pre-made example data shared between ExampleCarousel and SocialProof */
+/** Conversation examples for the landing page carousel */
+export interface ConvoExample {
+  id: string;
+  petName: string;
+  petPhoto: string;
+  messages: { sender: "pet" | "owner"; text: string }[];
+}
+
+export const CONVO_EXAMPLES: ConvoExample[] = [
+  {
+    id: "mochi",
+    petName: "Mochi",
+    petPhoto: "/samples/corgi-mochi.jpg",
+    messages: [
+      { sender: "owner", text: "mochi where are my airpods" },
+      { sender: "pet", text: "have you checked under the couch" },
+      { sender: "owner", text: "why would they be under the couch" },
+      { sender: "pet", text: "no reason" },
+      { sender: "pet", text: "unrelated but I was NOT chewing anything earlier" },
+      { sender: "owner", text: "MOCHI" },
+      { sender: "pet", text: "you have no proof" },
+    ],
+  },
+  {
+    id: "chairman",
+    petName: "Chairman Meow",
+    petPhoto: "/samples/cat-chairman.jpg",
+    messages: [
+      { sender: "owner", text: "are you sitting on my laptop again" },
+      { sender: "pet", text: "no" },
+      { sender: "owner", text: "I can literally see you on the camera" },
+      { sender: "pet", text: "then why did you ask" },
+      { sender: "pet", text: "also I deleted some of your emails" },
+      { sender: "pet", text: "you're welcome" },
+    ],
+  },
+  {
+    id: "biscuit",
+    petName: "Biscuit",
+    petPhoto: "/samples/pug-biscuit.jpg",
+    messages: [
+      { sender: "pet", text: "MOM" },
+      { sender: "pet", text: "MOM" },
+      { sender: "pet", text: "MOOOOOM" },
+      { sender: "owner", text: "biscuit it's 6am what" },
+      { sender: "pet", text: "I HEARD A SOUND" },
+      { sender: "owner", text: "that was the refrigerator" },
+      { sender: "pet", text: "ok but WHAT IF IT WASN'T" },
+    ],
+  },
+  {
+    id: "luna",
+    petName: "Luna",
+    petPhoto: "/samples/cat-luna.jpg",
+    messages: [
+      { sender: "owner", text: "luna why is there a dead bug on my pillow" },
+      { sender: "pet", text: "it's a gift" },
+      { sender: "owner", text: "I don't want it" },
+      { sender: "pet", text: "the disrespect" },
+      { sender: "pet", text: "I hunted that FOR you" },
+      { sender: "owner", text: "please stop" },
+      { sender: "pet", text: "no" },
+    ],
+  },
+];
+
+/** Pre-made example data for SocialProof */
 
 export interface SampleExample {
   id: string;
