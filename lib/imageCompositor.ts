@@ -568,10 +568,12 @@ function drawConvo(
   petName: string
 ): HTMLCanvasElement {
   const W = 1080;
-  const H = 1920;
+  const CONVO_FOOTER_H = 100;
+  const MIN_H = 1920;
+  // Allocate oversized canvas — we'll trim to actual content at the end
   const canvas = document.createElement("canvas");
   canvas.width = W;
-  canvas.height = H;
+  canvas.height = 2800;
   const ctx = canvas.getContext("2d")!;
   const fontFamily = '"Nunito", "Segoe UI", Arial, sans-serif';
 
@@ -644,7 +646,7 @@ function drawConvo(
 
   // === WHITE MESSAGE AREA ===
   ctx.fillStyle = "#FFFFFF";
-  ctx.fillRect(0, headerH, W, H - headerH);
+  ctx.fillRect(0, headerH, W, canvas.height - headerH);
 
   // === MESSAGE BUBBLES + PHOTO BUBBLE ===
   const bubbleMargin = 32;
@@ -787,24 +789,38 @@ function drawConvo(
     ctx.fillText(emoji, pillX + pillW / 2, pillY + pillH / 2 + 7);
   }
 
-  // --- Brand footer — positioned below last message with padding ---
-  const footerTop = Math.max(curY + 60, 1820);
+  // --- Brand footer — always visible below messages ---
+  const H = Math.max(MIN_H, curY + 60 + CONVO_FOOTER_H);
+  const footerTop = H - CONVO_FOOTER_H;
+
+  // Fill white space between last message and footer
+  ctx.fillStyle = "#FFFFFF";
+  ctx.fillRect(0, curY, W, footerTop - curY);
+
+  // Coral footer bar
   ctx.fillStyle = CORAL;
-  ctx.fillRect(0, footerTop, W, H - footerTop);
+  ctx.fillRect(0, footerTop, W, CONVO_FOOTER_H);
 
   const brandFontSize = 28;
   const ctaFontSize = 22;
+  const footerCenterY = footerTop + CONVO_FOOTER_H / 2 + 10;
   ctx.fillStyle = "white";
   ctx.textAlign = "left";
   ctx.font = `bold ${brandFontSize}px ${fontFamily}`;
-  const footerCenterY = footerTop + (H - footerTop) / 2 + 10;
   ctx.fillText(`🐾 ${BRAND_URL}`, 32, footerCenterY);
 
   ctx.textAlign = "right";
   ctx.font = `${ctaFontSize}px ${fontFamily}`;
   ctx.fillText("Try it free \u2192", W - 32, footerCenterY);
 
-  return canvas;
+  // Trim canvas to actual content height
+  const trimmed = document.createElement("canvas");
+  trimmed.width = W;
+  trimmed.height = H;
+  const trimCtx = trimmed.getContext("2d")!;
+  trimCtx.drawImage(canvas, 0, 0, W, H, 0, 0, W, H);
+
+  return trimmed;
 }
 
 /** Composite an iMessage conversation screenshot */
