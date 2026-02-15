@@ -23,6 +23,7 @@ interface Props {
   onDifferentCaption?: () => void;
   onTryVoice?: () => void;
   suggestedVoiceName?: string;
+  suggestedVoiceEmoji?: string;
   onNewPhoto?: () => void;
 }
 
@@ -35,6 +36,7 @@ export default function ShareButtons({
   onDifferentCaption,
   onTryVoice,
   suggestedVoiceName,
+  suggestedVoiceEmoji,
   onNewPhoto,
 }: Props) {
   const [toast, setToast] = useState<string | null>(null);
@@ -241,7 +243,7 @@ export default function ShareButtons({
               onClick={onTryVoice}
               className="btn-press flex-1 rounded-xl bg-coral px-3 py-3 text-sm font-bold text-white shadow transition hover:bg-coral-dark min-h-[44px]"
             >
-              🎭 Try {suggestedVoiceName}
+              {suggestedVoiceEmoji || "🎭"} Try {suggestedVoiceName}
             </button>
           )}
         </div>

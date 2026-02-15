@@ -37,9 +37,16 @@ const ALL_VOICES: VoiceStyle[] = ["funny", "dramatic", "genz", "passive"];
 
 const VOICE_DISPLAY_NAMES: Record<VoiceStyle, string> = {
   funny: "Silly",
-  passive: "Passive",
+  passive: "Passive Agg",
   genz: "Gen-Z",
-  dramatic: "Dramatic",
+  dramatic: "Dramatic Narr",
+};
+
+const VOICE_EMOJIS: Record<VoiceStyle, string> = {
+  funny: "😂",
+  passive: "😒",
+  genz: "💀",
+  dramatic: "🎬",
 };
 
 const VOICE_SUGGESTIONS: Record<VoiceStyle, VoiceStyle> = {
@@ -347,6 +354,7 @@ export default function Home() {
     return untried ?? "funny";
   })();
   const suggestedVoiceName = VOICE_DISPLAY_NAMES[suggestedVoice];
+  const suggestedVoiceEmoji = VOICE_EMOJIS[suggestedVoice];
 
   const handleTryVoice = useCallback(() => {
     trackEvent("try_voice_tapped", { voice_style: suggestedVoice });
@@ -508,6 +516,7 @@ export default function Home() {
             onDifferentCaption={imageData ? handleDifferentCaption : undefined}
             onTryVoice={imageData ? handleTryVoice : undefined}
             suggestedVoiceName={suggestedVoiceName}
+            suggestedVoiceEmoji={suggestedVoiceEmoji}
             onNewPhoto={handleNewPhoto}
           />
         </>
