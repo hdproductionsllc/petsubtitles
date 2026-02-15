@@ -607,7 +607,7 @@ export default function Home() {
       {appState === "result" && standardImage && (
         <>
           <div className="mt-1">
-            <ResultDisplay imageDataUrl={standardImage} caption={caption} />
+            <ResultDisplay imageDataUrl={standardImage} caption={caption} hideCaption={selectedFormat === "convo"} />
           </div>
 
           {/* Inline name prompt — interactive for first-timers, static for returning users */}
