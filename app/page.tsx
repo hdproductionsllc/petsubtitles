@@ -65,7 +65,7 @@ export default function Home() {
   const [shareToast, setShareToast] = useState<string | null>(null);
   const [battleImage, setBattleImage] = useState("");
   const [battleEntries, setBattleEntries] = useState<BattleEntry[]>([]);
-  const [selectedFormat, setSelectedFormat] = useState<"caption" | "convo">("caption");
+  const [selectedFormat, setSelectedFormat] = useState<"caption" | "convo">("convo");
   const [convoMessages, setConvoMessages] = useState<ConvoMessage[]>([]);
   const [petName, setPetName] = useState("");
   const [petPronouns, setPetPronouns] = useState("");
@@ -222,7 +222,7 @@ export default function Home() {
         trackEvent("convo_received", { voice_style: voiceToUse });
 
         try {
-          composited = await compositeConvo(data.messages, petName || undefined);
+          composited = await compositeConvo(imageData.originalDataUrl, data.messages, petName || undefined);
         } catch {
           throw new Error("Couldn't create the conversation image. Try a different photo.");
         }

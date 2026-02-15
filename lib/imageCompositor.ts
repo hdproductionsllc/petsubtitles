@@ -506,8 +506,9 @@ async function drawBattle(
   return canvas;
 }
 
-/** Draw iMessage-style text conversation screenshot */
+/** Draw iMessage-style text conversation with pet photo */
 function drawConvo(
+  img: HTMLImageElement,
   messages: ConvoMessage[],
   petName: string
 ): HTMLCanvasElement {
@@ -519,35 +520,27 @@ function drawConvo(
   const ctx = canvas.getContext("2d")!;
   const fontFamily = '"Nunito", "Segoe UI", Arial, sans-serif';
 
-  // White background
-  ctx.fillStyle = "#FFFFFF";
-  ctx.fillRect(0, 0, W, H);
+  // === TOP SECTION: Dark background with pet photo ===
+  const headerH = 640;
+  const darkGrad = ctx.createLinearGradient(0, 0, 0, headerH);
+  darkGrad.addColorStop(0, "#1A1A2E");
+  darkGrad.addColorStop(1, "#16213E");
+  ctx.fillStyle = darkGrad;
+  ctx.fillRect(0, 0, W, headerH);
 
-  // --- 1. Status bar (0-50px) ---
-  ctx.fillStyle = "#000000";
+  // Status bar
+  ctx.fillStyle = "#FFFFFF";
+  ctx.globalAlpha = 0.7;
   ctx.font = `bold 28px ${fontFamily}`;
   ctx.textAlign = "left";
   ctx.fillText("9:41", 32, 38);
-
-  // Battery + signal decorations (right side)
-  ctx.textAlign = "right";
-  ctx.font = `24px ${fontFamily}`;
-  ctx.fillStyle = "#000000";
-  // Signal bars
   const signalX = W - 32;
   const signalY = 22;
   for (let i = 0; i < 4; i++) {
     const barH = 10 + i * 4;
-    ctx.fillStyle = "#000000";
     ctx.fillRect(signalX - 80 + i * 14, signalY + (22 - barH), 8, barH);
   }
-  // WiFi icon (simplified)
-  ctx.fillStyle = "#000000";
-  ctx.beginPath();
-  ctx.arc(signalX - 20, signalY + 10, 4, 0, Math.PI * 2);
-  ctx.fill();
-  // Battery
-  ctx.fillStyle = "#000000";
+  ctx.fillStyle = "#FFFFFF";
   ctx.beginPath();
   ctx.roundRect(signalX - 10, signalY, 42, 20, 4);
   ctx.fill();
@@ -555,35 +548,64 @@ function drawConvo(
   ctx.beginPath();
   ctx.roundRect(signalX - 8, signalY + 2, 36, 16, 3);
   ctx.fill();
+  ctx.globalAlpha = 1;
 
-  // --- 2. Contact header (50-160px) ---
-  // Back chevron
-  ctx.fillStyle = "#007AFF";
-  ctx.font = `32px ${fontFamily}`;
-  ctx.textAlign = "left";
-  ctx.fillText("\u2039", 20, 105);
+  // Circular pet photo with shadow
+  const photoSize = 360;
+  const photoX = (W - photoSize) / 2;
+  const photoY = 80;
+  const photoCenterX = W / 2;
+  const photoCenterY = photoY + photoSize / 2;
 
-  // Contact name centered + "iMessage" subtitle
-  ctx.fillStyle = "#000000";
-  ctx.font = `bold 34px ${fontFamily}`;
-  ctx.textAlign = "center";
-  ctx.fillText(petName, W / 2, 100);
-
-  ctx.fillStyle = "#8E8E93";
-  ctx.font = `22px ${fontFamily}`;
-  ctx.fillText("iMessage", W / 2, 130);
-
-  // Thin bottom border
-  ctx.strokeStyle = "#E5E5EA";
-  ctx.lineWidth = 1;
+  ctx.shadowColor = "rgba(0, 0, 0, 0.4)";
+  ctx.shadowBlur = 30;
+  ctx.shadowOffsetY = 8;
+  ctx.fillStyle = "rgba(255, 255, 255, 0.15)";
   ctx.beginPath();
-  ctx.moveTo(0, 155);
-  ctx.lineTo(W, 155);
-  ctx.stroke();
+  ctx.arc(photoCenterX, photoCenterY, photoSize / 2 + 6, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.shadowColor = "transparent";
+  ctx.shadowBlur = 0;
+  ctx.shadowOffsetY = 0;
 
-  // --- 3. Message area (170-1820px) ---
-  const msgAreaTop = 170;
-  const msgAreaBottom = 1820;
+  // Clip and draw photo in circle (center-crop)
+  ctx.save();
+  ctx.beginPath();
+  ctx.arc(photoCenterX, photoCenterY, photoSize / 2, 0, Math.PI * 2);
+  ctx.clip();
+  const imgAspect = img.naturalWidth / img.naturalHeight;
+  let drawW: number, drawH: number, drawX: number, drawY: number;
+  if (imgAspect > 1) {
+    drawH = photoSize;
+    drawW = photoSize * imgAspect;
+    drawX = photoX - (drawW - photoSize) / 2;
+    drawY = photoY;
+  } else {
+    drawW = photoSize;
+    drawH = photoSize / imgAspect;
+    drawX = photoX;
+    drawY = photoY - (drawH - photoSize) / 2;
+  }
+  ctx.drawImage(img, drawX, drawY, drawW, drawH);
+  ctx.restore();
+
+  // Pet name below photo
+  ctx.fillStyle = "#FFFFFF";
+  ctx.textAlign = "center";
+  ctx.font = `bold 42px ${fontFamily}`;
+  ctx.fillText(petName, W / 2, photoY + photoSize + 50);
+
+  // "iMessage" label
+  ctx.fillStyle = "rgba(255, 255, 255, 0.5)";
+  ctx.font = `24px ${fontFamily}`;
+  ctx.fillText("iMessage", W / 2, photoY + photoSize + 85);
+
+  // === BOTTOM SECTION: White background ===
+  ctx.fillStyle = "#FFFFFF";
+  ctx.fillRect(0, headerH, W, H - headerH);
+
+  // === MESSAGE BUBBLES — top-aligned ===
+  const msgAreaTop = headerH + 24;
   const msgMaxWidth = Math.round(W * 0.63);
   const bubblePadH = 24;
   const bubblePadV = 14;
@@ -595,15 +617,11 @@ function drawConvo(
 
   ctx.font = `${fontSize}px ${fontFamily}`;
 
-  // Pre-calculate all bubble sizes to vertically center in message area
-  interface BubbleLayout {
-    msg: ConvoMessage;
-    lines: string[];
-    bubbleW: number;
-    bubbleH: number;
-  }
-  const bubbles: BubbleLayout[] = [];
-  for (const msg of messages) {
+  let curY = msgAreaTop;
+  let lastOwnerBubbleBottomY = 0;
+
+  for (let i = 0; i < messages.length; i++) {
+    const msg = messages[i];
     const textMaxW = msgMaxWidth - bubblePadH * 2;
     const lines = wrapText(ctx, msg.text, textMaxW);
     const textH = lines.length * lineHeight;
@@ -612,51 +630,19 @@ function drawConvo(
       Math.max(...lines.map((l) => ctx.measureText(l).width)) + bubblePadH * 2
     );
     const bubbleH = textH + bubblePadV * 2;
-    bubbles.push({ msg, lines, bubbleW, bubbleH });
-  }
 
-  // Calculate total height
-  let totalH = 0;
-  for (let i = 0; i < bubbles.length; i++) {
-    totalH += bubbles[i].bubbleH;
     if (i > 0) {
-      totalH +=
-        bubbles[i].msg.sender === bubbles[i - 1].msg.sender
-          ? sameSenderGap
-          : diffSenderGap;
-    }
-  }
-
-  // Start Y — center in message area, or start from top if it fills up
-  const availableH = msgAreaBottom - msgAreaTop;
-  let curY = totalH < availableH
-    ? msgAreaTop + (availableH - totalH) / 2
-    : msgAreaTop;
-
-  let lastOwnerBubbleY = 0;
-  let lastOwnerBubbleBottomY = 0;
-
-  for (let i = 0; i < bubbles.length; i++) {
-    const { msg, lines, bubbleW, bubbleH } = bubbles[i];
-
-    // Gap before this bubble
-    if (i > 0) {
-      curY +=
-        msg.sender === bubbles[i - 1].msg.sender
-          ? sameSenderGap
-          : diffSenderGap;
+      curY += msg.sender === messages[i - 1].sender ? sameSenderGap : diffSenderGap;
     }
 
     const isOwner = msg.sender === "owner";
     const bubbleX = isOwner ? W - 24 - bubbleW : 24;
 
-    // Bubble background
     ctx.fillStyle = isOwner ? "#007AFF" : "#E9E9EB";
     ctx.beginPath();
     ctx.roundRect(bubbleX, curY, bubbleW, bubbleH, bubbleRadius);
     ctx.fill();
 
-    // Text
     ctx.fillStyle = isOwner ? "#FFFFFF" : "#000000";
     ctx.textAlign = "left";
     ctx.font = `${fontSize}px ${fontFamily}`;
@@ -669,7 +655,6 @@ function drawConvo(
     }
 
     if (isOwner) {
-      lastOwnerBubbleY = curY;
       lastOwnerBubbleBottomY = curY + bubbleH;
     }
 
@@ -704,13 +689,15 @@ function drawConvo(
 
 /** Composite an iMessage conversation screenshot */
 export async function compositeConvo(
+  originalDataUrl: string,
   messages: ConvoMessage[],
   petName?: string
 ): Promise<CompositeResult> {
   await ensureFontsReady();
 
+  const img = await loadImage(originalDataUrl);
   const contactName = petName || "Pet";
-  const convoCanvas = drawConvo(messages, contactName);
+  const convoCanvas = drawConvo(img, messages, contactName);
   const dataUrl = convoCanvas.toDataURL("image/png");
 
   // Both standard and story return the same image (already 1080x1920 = 9:16)
