@@ -112,7 +112,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ messages });
     }
 
-    const caption = await translatePetPhoto(
+    const memeCaption = await translatePetPhoto(
       imageBase64,
       mediaType as MediaType,
       voiceStyle as VoiceStyle,
@@ -120,14 +120,7 @@ export async function POST(request: NextRequest) {
       cleanPronouns
     );
 
-    if (caption === "NO_PET_DETECTED") {
-      return NextResponse.json(
-        { error: "Hmm, we don't see a pet in this photo! Try again with your furry (or scaly) friend." },
-        { status: 400 }
-      );
-    }
-
-    return NextResponse.json({ caption });
+    return NextResponse.json({ caption: memeCaption });
   } catch (err) {
     console.error("Translation error:", err);
     return NextResponse.json(

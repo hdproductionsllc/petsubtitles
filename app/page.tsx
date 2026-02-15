@@ -22,12 +22,12 @@ import type { ConvoMessage } from "@/lib/anthropic";
 import {
   hasCredits,
   useCredit,
-  earnShareCredit,
   isPremium,
   isPremiumExpired,
   reverifyPremium,
 } from "@/lib/usageTracker";
 import { trackEvent } from "@/lib/analytics";
+import { playMessageSound } from "@/lib/sounds";
 import type { VoiceStyle } from "@/lib/anthropic";
 
 type AppState = "idle" | "photo_selected" | "scanning" | "translating" | "result" | "error";
@@ -68,9 +68,9 @@ export default function Home() {
   const [isOffline, setIsOffline] = useState(false);
   const [historyKey, setHistoryKey] = useState(0);
   const [creditRefresh, setCreditRefresh] = useState(0);
-  const [shareToast, setShareToast] = useState<string | null>(null);
   const [selectedFormat, setSelectedFormat] = useState<"caption" | "convo">("convo");
   const [convoMessages, setConvoMessages] = useState<ConvoMessage[]>([]);
+  const [memeCaption, setMemeCaption] = useState<{ top: string; bottom: string } | null>(null);
   const [petName, setPetName] = useState("");
   const [petPronouns, setPetPronouns] = useState("");
   const [isFirstTime, setIsFirstTime] = useState(true);
@@ -135,6 +135,7 @@ export default function Home() {
     setStandardImage("");
     setStoryImage("");
     setConvoMessages([]);
+    setMemeCaption(null);
     setError("");
     setAppState("idle");
   }, []);
@@ -148,6 +149,7 @@ export default function Home() {
     setStandardImage("");
     setStoryImage("");
     setConvoMessages([]);
+    setMemeCaption(null);
     setError("");
     setAppState("idle");
     setTimeout(() => {
@@ -182,11 +184,11 @@ export default function Home() {
     }
   }, [imageData]);
 
-  const doTranslate = useCallback(async (voice?: VoiceStyle, nameOverride?: string) => {
+  const doTranslate = useCallback(async (voice?: VoiceStyle, nameOverride?: string, formatOverride?: "caption" | "convo") => {
     if (!imageData) return;
 
     const voiceToUse = voice ?? selectedVoice;
-    const format = selectedFormat;
+    const format = formatOverride ?? selectedFormat;
     const nameToUse = nameOverride ?? petName;
 
     // Check credits
@@ -225,9 +227,11 @@ export default function Home() {
       }
 
       let composited;
+      let displayCaption: string;
 
       if (format === "convo") {
         setConvoMessages(data.messages);
+        displayCaption = "Text Convo";
         setCaption("Text conversation");
         trackEvent("convo_received", { voice_style: voiceToUse });
 
@@ -237,14 +241,17 @@ export default function Home() {
           throw new Error("Couldn't create the conversation image. Try a different photo.");
         }
       } else {
-        setCaption(data.caption);
+        const mc = data.caption as { top: string; bottom: string };
+        setMemeCaption(mc);
+        displayCaption = `${mc.top} — ${mc.bottom}`;
+        setCaption(displayCaption);
         setConvoMessages([]);
         trackEvent("translation_received", { voice_style: voiceToUse });
 
         try {
-          composited = await compositeSubtitles(imageData.originalDataUrl, data.caption);
+          composited = await compositeSubtitles(imageData.originalDataUrl, mc);
         } catch {
-          throw new Error("Couldn't create the subtitle image. Try a different photo.");
+          throw new Error("Couldn't create the meme image. Try a different photo.");
         }
       }
 
@@ -261,11 +268,12 @@ export default function Home() {
         thumbnailDataUrl: thumbnail,
         standardImageUrl: composited.standardDataUrl,
         storyImageUrl: composited.storyDataUrl,
-        caption: format === "convo" ? "Text Convo" : data.caption,
+        caption: displayCaption,
       });
       setHistoryKey((k) => k + 1);
 
       setAppState("result");
+      playMessageSound();
 
       // Track used voice for smart suggestions
       setUsedVoices((prev) => prev.includes(voiceToUse) ? prev : [...prev, voiceToUse]);
@@ -298,23 +306,13 @@ export default function Home() {
     }
   }, [appState, imageData, doTranslate]);
 
-  const handleShareComplete = useCallback(() => {
-    const earned = earnShareCredit();
-    refreshCredits();
-    if (earned) {
-      setShareToast("Earned 1 extra translation! 🐾");
-      setTimeout(() => setShareToast(null), 3000);
+  const handleFormatChange = useCallback((fmt: "caption" | "convo") => {
+    setSelectedFormat(fmt);
+    // If we're in result state, auto re-translate with the new format
+    if (appState === "result" && imageData) {
+      doTranslate(undefined, undefined, fmt);
     }
-  }, [refreshCredits]);
-
-  const handleShareToUnlock = useCallback(() => {
-    const earned = earnShareCredit();
-    refreshCredits();
-    if (earned) {
-      setShareToast("Earned 1 extra translation! 🐾");
-      setTimeout(() => setShareToast(null), 3000);
-    }
-  }, [refreshCredits]);
+  }, [appState, imageData, doTranslate]);
 
   const handleRestore = useCallback((item: HistoryItem) => {
     setCaption(item.caption);
@@ -365,15 +363,6 @@ export default function Home() {
         </div>
       )}
 
-      {/* Share credit toast */}
-      {shareToast && (
-        <div className="toast-enter mx-3 mb-1.5 flex justify-center">
-          <div className="rounded-full bg-teal px-4 py-2 text-sm font-semibold text-white shadow-lg">
-            {shareToast}
-          </div>
-        </div>
-      )}
-
       {/* IDLE STATE: Example carousel + CTA */}
       {appState === "idle" && (
         <ExampleCarousel onTryIt={handleTryIt} />
@@ -419,7 +408,7 @@ export default function Home() {
           selected={selectedVoice}
           onSelect={handleVoiceSelect}
           format={selectedFormat}
-          onFormatChange={setSelectedFormat}
+          onFormatChange={handleFormatChange}
         />
       )}
 
@@ -507,7 +496,6 @@ export default function Home() {
             caption={caption}
             voiceStyle={selectedVoice}
             isConvo={selectedFormat === "convo"}
-            onShareComplete={handleShareComplete}
             onDifferentCaption={imageData ? handleDifferentCaption : undefined}
             onTryVoice={imageData ? handleTryVoice : undefined}
             suggestedVoiceName={suggestedVoiceName}
@@ -539,9 +527,6 @@ export default function Home() {
       <PaywallModal
         isOpen={paywallOpen}
         onClose={() => setPaywallOpen(false)}
-        lastResultImage={standardImage || undefined}
-        lastCaption={caption || undefined}
-        onShareToUnlock={handleShareToUnlock}
       />
     </div>
   );

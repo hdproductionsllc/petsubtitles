@@ -105,103 +105,139 @@ function fitText(
   return { lines: wrapText(ctx, text, maxWidth), fontSize: minSize };
 }
 
-/** Draw the standard format: original image + subtitle boxes + branded footer.
- *
- * Layout (top to bottom):
- * 1. Full pet photo at original aspect ratio
- * 2. Per-line semi-transparent dark rounded boxes near bottom (Netflix-style subtitles)
- * 3. White bold caption text rendered inside each box
- * 4. Coral footer bar APPENDED BELOW the photo (extra canvas height)
- */
-function drawStandard(
-  img: HTMLImageElement,
-  caption: string
-): HTMLCanvasElement {
-  const canvas = document.createElement("canvas");
-  const w = img.naturalWidth;
-  const h = img.naturalHeight;
-  const fontFamily = '"Nunito", "Segoe UI", Arial, sans-serif';
-
-  // Footer bar sits BELOW the photo — adds to total canvas height
-  const footerH = Math.max(FOOTER_HEIGHT, Math.round(w * 0.06));
-  canvas.width = w;
-  canvas.height = h + footerH;
-
-  const ctx = canvas.getContext("2d")!;
-
-  // 1. Draw the full photo
-  ctx.drawImage(img, 0, 0);
-
-  // 2. Caption text in per-line subtitle boxes (no gradient overlay)
+/** Measure the height needed for a meme text bar (black bar with white text) */
+function measureBarHeight(
+  ctx: CanvasRenderingContext2D,
+  text: string,
+  w: number,
+  fontFamily: string
+): { lines: string[]; fontSize: number; barH: number } {
   const padding = w * 0.06;
   const maxTextWidth = w - padding * 2;
-  const minFontSize = Math.max(20, Math.round(w * 0.028));
+  const startSize = Math.round(w * 0.05);
+  const minSize = Math.round(w * 0.03);
+
   const { lines, fontSize } = fitText(
     ctx,
-    caption,
+    text.toUpperCase(),
     maxTextWidth,
-    5,
-    Math.round(w * 0.045),
-    minFontSize,
-    fontFamily
+    3,
+    startSize,
+    minSize,
+    fontFamily,
+    false // Anton is not bold — it's already heavy
   );
 
-  const boxPadH = Math.round(fontSize * 0.45); // horizontal padding
-  const boxPadV = Math.round(fontSize * 0.25); // vertical padding
-  const boxRadius = Math.max(8, Math.round(fontSize * 0.22));
-  const lineHeight = fontSize * 1.3;
-  const boxLineHeight = lineHeight + boxPadV * 2;
-  const boxGap = Math.round(fontSize * 0.2);
-  const textBlockHeight = lines.length * boxLineHeight + (lines.length - 1) * boxGap;
-  const bottomPadding = h * 0.04;
-  const blockStartY = Math.max(h * 0.15, h - bottomPadding - textBlockHeight);
+  const lineHeight = fontSize * 1.25;
+  const vertPad = fontSize * 0.5;
+  const barH = lines.length * lineHeight + vertPad * 2;
 
-  ctx.font = `bold ${fontSize}px ${fontFamily}`;
+  return { lines, fontSize, barH };
+}
+
+/** Draw a meme text bar (black bg, white centered text) */
+function drawBar(
+  ctx: CanvasRenderingContext2D,
+  lines: string[],
+  fontSize: number,
+  x: number,
+  y: number,
+  w: number,
+  barH: number,
+  fontFamily: string
+): void {
+  ctx.fillStyle = "#000000";
+  ctx.fillRect(x, y, w, barH);
+
+  const lineHeight = fontSize * 1.25;
+  const vertPad = fontSize * 0.5;
+
+  ctx.fillStyle = "#FFFFFF";
+  ctx.font = `${fontSize}px ${fontFamily}`;
   ctx.textAlign = "center";
 
   for (let i = 0; i < lines.length; i++) {
-    const line = lines[i];
-    const textWidth = ctx.measureText(line).width;
-    const boxW = textWidth + boxPadH * 2;
-    const boxX = (w - boxW) / 2;
-    const boxY = blockStartY + i * (boxLineHeight + boxGap);
-
-    // Dark semi-transparent rounded box
-    ctx.fillStyle = "rgba(0, 0, 0, 0.7)";
-    ctx.beginPath();
-    ctx.roundRect(boxX, boxY, boxW, boxLineHeight, boxRadius);
-    ctx.fill();
-
-    // White text centered in the box
-    ctx.fillStyle = "white";
-    ctx.shadowColor = "rgba(0, 0, 0, 0.6)";
-    ctx.shadowBlur = 3;
-    ctx.shadowOffsetX = 0;
-    ctx.shadowOffsetY = 1;
-    ctx.fillText(line, w / 2, boxY + boxPadV + lineHeight * 0.78);
+    ctx.fillText(
+      lines[i],
+      x + w / 2,
+      y + vertPad + (i + 1) * lineHeight - fontSize * 0.15
+    );
   }
+}
 
-  // Reset shadow
-  ctx.shadowColor = "transparent";
-  ctx.shadowBlur = 0;
-  ctx.shadowOffsetX = 0;
-  ctx.shadowOffsetY = 0;
+/** Core meme renderer: top bar + photo + bottom bar. Returns canvas and dimensions. */
+function drawMemeCore(
+  img: HTMLImageElement,
+  top: string,
+  bottom: string
+): HTMLCanvasElement {
+  const w = img.naturalWidth;
+  const fontFamily = '"Anton", Impact, sans-serif';
 
-  // 4. Branded footer — coral bar BELOW the photo
+  // Use a temp canvas to measure text bar heights
+  const tempCanvas = document.createElement("canvas");
+  tempCanvas.width = w;
+  tempCanvas.height = 100;
+  const tempCtx = tempCanvas.getContext("2d")!;
+
+  const topBar = measureBarHeight(tempCtx, top, w, fontFamily);
+  const bottomBar = measureBarHeight(tempCtx, bottom, w, fontFamily);
+
+  const photoH = img.naturalHeight;
+  const totalH = topBar.barH + photoH + bottomBar.barH;
+
+  const canvas = document.createElement("canvas");
+  canvas.width = w;
+  canvas.height = totalH;
+  const ctx = canvas.getContext("2d")!;
+
+  // 1. Top black bar with setup text
+  drawBar(ctx, topBar.lines, topBar.fontSize, 0, 0, w, topBar.barH, fontFamily);
+
+  // 2. Full pet photo, unmodified
+  ctx.drawImage(img, 0, topBar.barH);
+
+  // 3. Bottom black bar with punchline
+  drawBar(ctx, bottomBar.lines, bottomBar.fontSize, 0, topBar.barH + photoH, w, bottomBar.barH, fontFamily);
+
+  return canvas;
+}
+
+/** Draw the meme format: black top bar → photo → black bottom bar → coral footer */
+function drawMeme(
+  img: HTMLImageElement,
+  top: string,
+  bottom: string
+): HTMLCanvasElement {
+  const memeCanvas = drawMemeCore(img, top, bottom);
+  const w = memeCanvas.width;
+  const memeH = memeCanvas.height;
+  const fontFamily = '"Nunito", "Segoe UI", Arial, sans-serif';
+
+  // Add coral footer below the meme
+  const footerH = Math.max(FOOTER_HEIGHT, Math.round(w * 0.06));
+  const canvas = document.createElement("canvas");
+  canvas.width = w;
+  canvas.height = memeH + footerH;
+  const ctx = canvas.getContext("2d")!;
+
+  // Draw the meme
+  ctx.drawImage(memeCanvas, 0, 0);
+
+  // Coral footer bar
   ctx.fillStyle = CORAL;
-  ctx.fillRect(0, h, w, footerH);
+  ctx.fillRect(0, memeH, w, footerH);
 
+  const padding = w * 0.06;
   const brandFontSize = Math.max(16, Math.round(w * 0.026));
   const ctaFontSize = Math.max(14, Math.round(w * 0.022));
-  const footerCenterY = h + footerH * 0.62;
+  const footerCenterY = memeH + footerH * 0.62;
   ctx.fillStyle = "white";
 
-  // Left: paw + whatmypetthinks.com
   ctx.textAlign = "left";
   ctx.font = `bold ${brandFontSize}px ${fontFamily}`;
   ctx.fillText(`🐾 ${BRAND_URL}`, padding, footerCenterY);
 
-  // Right: CTA
   ctx.textAlign = "right";
   ctx.font = `${ctaFontSize}px ${fontFamily}`;
   ctx.fillText("Try it free \u2192", w - padding, footerCenterY);
@@ -220,10 +256,11 @@ async function generateQRImage(url: string, size: number): Promise<HTMLImageElem
   return loadImage(dataUrl);
 }
 
-/** Draw story format: 1080x1920 with gradient bg, centered photo, caption, CTA + QR */
+/** Draw story format: 1080x1920 with coral gradient bg, centered meme, logo + CTA */
 async function drawStory(
   img: HTMLImageElement,
-  caption: string
+  top: string,
+  bottom: string
 ): Promise<HTMLCanvasElement> {
   const W = 1080;
   const H = 1920;
@@ -232,6 +269,9 @@ async function drawStory(
   canvas.height = H;
   const ctx = canvas.getContext("2d")!;
 
+  const fontFamily = '"Nunito", "Segoe UI", Arial, sans-serif';
+  const displayFont = '"Fredoka", "Nunito", sans-serif';
+
   // Coral gradient background
   const bgGrad = ctx.createLinearGradient(0, 0, 0, H);
   bgGrad.addColorStop(0, CORAL);
@@ -239,71 +279,33 @@ async function drawStory(
   ctx.fillStyle = bgGrad;
   ctx.fillRect(0, 0, W, H);
 
-  const fontFamily = '"Nunito", "Segoe UI", Arial, sans-serif';
-  const displayFont = '"Fredoka", "Nunito", sans-serif';
-
   // Top logo
   ctx.fillStyle = "white";
   ctx.textAlign = "center";
   ctx.font = `bold 48px ${displayFont}`;
   ctx.fillText(`🐾 ${BRAND_NAME}`, W / 2, 100);
 
-  // Pet photo — centered, with rounded corners and shadow
-  const photoMaxW = W - 120;
-  const photoMaxH = H * 0.5;
-  let photoW = img.naturalWidth;
-  let photoH = img.naturalHeight;
-  const scale = Math.min(photoMaxW / photoW, photoMaxH / photoH);
-  photoW = Math.round(photoW * scale);
-  photoH = Math.round(photoH * scale);
-  const photoX = (W - photoW) / 2;
-  const photoY = 160;
-  const cornerRadius = 24;
+  // Render the meme core (top bar + photo + bottom bar)
+  const memeCanvas = drawMemeCore(img, top, bottom);
 
-  // Shadow
+  // Scale meme to fit within story canvas with padding
+  const memeMaxW = W - 80;
+  const memeMaxH = H - 360; // leave room for logo (top) and CTA (bottom)
+  const memeScale = Math.min(memeMaxW / memeCanvas.width, memeMaxH / memeCanvas.height);
+  const memeW = Math.round(memeCanvas.width * memeScale);
+  const memeH = Math.round(memeCanvas.height * memeScale);
+  const memeX = (W - memeW) / 2;
+  const memeY = 140;
+
+  // Shadow behind the meme
   ctx.shadowColor = "rgba(0, 0, 0, 0.3)";
   ctx.shadowBlur = 30;
   ctx.shadowOffsetY = 10;
+  ctx.drawImage(memeCanvas, memeX, memeY, memeW, memeH);
 
-  // Rounded rect clip
-  ctx.save();
-  ctx.beginPath();
-  ctx.roundRect(photoX, photoY, photoW, photoH, cornerRadius);
-  ctx.clip();
-  ctx.drawImage(img, photoX, photoY, photoW, photoH);
-  ctx.restore();
-
-  // Reset shadow
   ctx.shadowColor = "transparent";
   ctx.shadowBlur = 0;
   ctx.shadowOffsetY = 0;
-
-  // Caption below photo
-  const captionY = photoY + photoH + 60;
-  const captionMaxW = W - 120;
-  const { lines, fontSize } = fitText(
-    ctx,
-    caption,
-    captionMaxW,
-    4,
-    36,
-    20,
-    fontFamily
-  );
-
-  ctx.fillStyle = "white";
-  ctx.textAlign = "center";
-  ctx.font = `bold ${fontSize}px ${fontFamily}`;
-  ctx.shadowColor = "rgba(0, 0, 0, 0.2)";
-  ctx.shadowBlur = 4;
-
-  const lineHeight = fontSize * 1.4;
-  for (let i = 0; i < lines.length; i++) {
-    ctx.fillText(lines[i], W / 2, captionY + i * lineHeight);
-  }
-
-  ctx.shadowColor = "transparent";
-  ctx.shadowBlur = 0;
 
   // CTA banner at bottom with QR code
   const ctaH = 200;
@@ -318,7 +320,6 @@ async function drawStory(
     const qrX = W - qrSize - 40;
     const qrY = ctaY + (ctaH - qrSize) / 2;
 
-    // QR background circle for contrast
     ctx.fillStyle = "rgba(255, 255, 255, 0.15)";
     ctx.beginPath();
     ctx.roundRect(qrX - 8, qrY - 8, qrSize + 16, qrSize + 16, 16);
@@ -326,10 +327,10 @@ async function drawStory(
 
     ctx.drawImage(qrImg, qrX, qrY, qrSize, qrSize);
   } catch {
-    // QR generation failed — skip it, URL is still visible
+    // QR generation failed — skip it
   }
 
-  // CTA text — left-aligned to balance with QR on the right
+  // CTA text
   const textAreaW = W - qrSize - 120;
   ctx.fillStyle = "white";
   ctx.textAlign = "center";
@@ -341,7 +342,7 @@ async function drawStory(
   ctx.fillText(`TRY IT ON YOUR PET \u2192 ${BRAND_URL}`, textAreaW / 2 + 40, ctaY + 115);
   ctx.globalAlpha = 1;
 
-  // Small "Scan to try" label under QR
+  // "Scan to try" label under QR
   ctx.font = `14px ${fontFamily}`;
   ctx.globalAlpha = 0.7;
   ctx.textAlign = "center";
@@ -503,7 +504,7 @@ async function drawBattle(
   return canvas;
 }
 
-/** Draw iMessage-style text conversation with pet photo */
+/** Draw iMessage-style text conversation with pet photo as first image bubble */
 function drawConvo(
   img: HTMLImageElement,
   messages: ConvoMessage[],
@@ -517,17 +518,17 @@ function drawConvo(
   const ctx = canvas.getContext("2d")!;
   const fontFamily = '"Nunito", "Segoe UI", Arial, sans-serif';
 
-  // === TOP SECTION: Dark background with pet photo ===
-  const headerH = 700;
-  const darkGrad = ctx.createLinearGradient(0, 0, 0, headerH);
-  darkGrad.addColorStop(0, "#1A1A2E");
-  darkGrad.addColorStop(1, "#16213E");
-  ctx.fillStyle = darkGrad;
+  // === SLIM HEADER: translucent gray like real iMessage ===
+  const headerH = 190;
+  ctx.fillStyle = "#F6F6F6";
   ctx.fillRect(0, 0, W, headerH);
+  // Subtle bottom border
+  ctx.fillStyle = "#D1D1D6";
+  ctx.fillRect(0, headerH - 1, W, 1);
 
-  // Status bar
-  ctx.fillStyle = "#FFFFFF";
-  ctx.globalAlpha = 0.7;
+  // Status bar (dark text on light bg)
+  ctx.fillStyle = "#000000";
+  ctx.globalAlpha = 0.8;
   ctx.font = `bold 28px ${fontFamily}`;
   ctx.textAlign = "left";
   ctx.fillText("9:41", 32, 38);
@@ -537,7 +538,7 @@ function drawConvo(
     const barH = 10 + i * 4;
     ctx.fillRect(signalX - 80 + i * 14, signalY + (22 - barH), 8, barH);
   }
-  ctx.fillStyle = "#FFFFFF";
+  ctx.fillStyle = "#000000";
   ctx.beginPath();
   ctx.roundRect(signalX - 10, signalY, 42, 20, 4);
   ctx.fill();
@@ -547,62 +548,49 @@ function drawConvo(
   ctx.fill();
   ctx.globalAlpha = 1;
 
-  // Circular pet photo with shadow
-  const photoSize = 480;
-  const photoX = (W - photoSize) / 2;
-  const photoY = 60;
-  const photoCenterX = W / 2;
-  const photoCenterY = photoY + photoSize / 2;
+  // Back arrow
+  ctx.fillStyle = "#007AFF";
+  ctx.font = `bold 36px ${fontFamily}`;
+  ctx.textAlign = "left";
+  ctx.fillText("\u2039", 24, 90);
 
-  ctx.shadowColor = "rgba(0, 0, 0, 0.4)";
-  ctx.shadowBlur = 30;
-  ctx.shadowOffsetY = 8;
-  ctx.fillStyle = "rgba(255, 255, 255, 0.15)";
-  ctx.beginPath();
-  ctx.arc(photoCenterX, photoCenterY, photoSize / 2 + 6, 0, Math.PI * 2);
-  ctx.fill();
-  ctx.shadowColor = "transparent";
-  ctx.shadowBlur = 0;
-  ctx.shadowOffsetY = 0;
-
-  // Clip and draw photo in circle (center-crop)
+  // Small circular avatar in header
+  const avatarSize = 52;
+  const avatarX = W / 2;
+  const avatarY = 88;
   ctx.save();
   ctx.beginPath();
-  ctx.arc(photoCenterX, photoCenterY, photoSize / 2, 0, Math.PI * 2);
+  ctx.arc(avatarX, avatarY, avatarSize / 2, 0, Math.PI * 2);
   ctx.clip();
-  const imgAspect = img.naturalWidth / img.naturalHeight;
-  let drawW: number, drawH: number, drawX: number, drawY: number;
-  if (imgAspect > 1) {
-    drawH = photoSize;
-    drawW = photoSize * imgAspect;
-    drawX = photoX - (drawW - photoSize) / 2;
-    drawY = photoY;
+  const avAspect = img.naturalWidth / img.naturalHeight;
+  if (avAspect > 1) {
+    const avH = avatarSize;
+    const avW = avatarSize * avAspect;
+    ctx.drawImage(img, avatarX - avW / 2, avatarY - avH / 2, avW, avH);
   } else {
-    drawW = photoSize;
-    drawH = photoSize / imgAspect;
-    drawX = photoX;
-    drawY = photoY - (drawH - photoSize) / 2;
+    const avW = avatarSize;
+    const avH = avatarSize / avAspect;
+    ctx.drawImage(img, avatarX - avW / 2, avatarY - avH / 2, avW, avH);
   }
-  ctx.drawImage(img, drawX, drawY, drawW, drawH);
   ctx.restore();
 
-  // Pet name below photo
-  ctx.fillStyle = "#FFFFFF";
+  // Pet name below avatar
+  ctx.fillStyle = "#000000";
   ctx.textAlign = "center";
-  ctx.font = `bold 48px ${fontFamily}`;
-  ctx.fillText(petName, W / 2, photoY + photoSize + 55);
+  ctx.font = `bold 30px ${fontFamily}`;
+  ctx.fillText(petName, W / 2, avatarY + avatarSize / 2 + 28);
 
   // "iMessage" label
-  ctx.fillStyle = "rgba(255, 255, 255, 0.5)";
-  ctx.font = `26px ${fontFamily}`;
-  ctx.fillText("iMessage", W / 2, photoY + photoSize + 92);
+  ctx.fillStyle = "rgba(0, 0, 0, 0.35)";
+  ctx.font = `20px ${fontFamily}`;
+  ctx.fillText("iMessage", W / 2, avatarY + avatarSize / 2 + 52);
 
-  // === BOTTOM SECTION: White background ===
+  // === WHITE MESSAGE AREA ===
   ctx.fillStyle = "#FFFFFF";
   ctx.fillRect(0, headerH, W, H - headerH);
 
-  // === MESSAGE BUBBLES — top-aligned ===
-  const msgAreaTop = headerH + 30;
+  // === MESSAGE BUBBLES + PHOTO BUBBLE ===
+  const bubbleMargin = 32;
   const msgMaxWidth = Math.round(W * 0.72);
   const bubblePadH = 30;
   const bubblePadV = 18;
@@ -611,52 +599,90 @@ function drawConvo(
   const lineHeight = fontSize * 1.35;
   const sameSenderGap = 10;
   const diffSenderGap = 24;
-  const bubbleMargin = 32;
+
+  // Photo bubble dimensions (full image, no crop)
+  const imgBubbleMaxW = Math.round(W * 0.58);
+  const imgBubbleRadius = 20;
+  const imgAspect = img.naturalWidth / img.naturalHeight;
+  const photoW = imgBubbleMaxW;
+  const photoH = Math.round(photoW / imgAspect);
 
   ctx.font = `${fontSize}px ${fontFamily}`;
 
-  let curY = msgAreaTop;
+  let curY = headerH + 24;
   let lastOwnerBubbleBottomY = 0;
+  let prevSender: string | null = null;
+
+  // Track bubble positions for reactions
+  const bubblePositions: { x: number; y: number; w: number; h: number; sender: string; idx: number }[] = [];
 
   for (let i = 0; i < messages.length; i++) {
     const msg = messages[i];
-    const textMaxW = msgMaxWidth - bubblePadH * 2;
-    const lines = wrapText(ctx, msg.text, textMaxW);
-    const textH = lines.length * lineHeight;
-    const bubbleW = Math.min(
-      msgMaxWidth,
-      Math.max(...lines.map((l) => ctx.measureText(l).width)) + bubblePadH * 2
-    );
-    const bubbleH = textH + bubblePadV * 2;
 
-    if (i > 0) {
-      curY += msg.sender === messages[i - 1].sender ? sameSenderGap : diffSenderGap;
+    // Gap between messages
+    if (prevSender !== null) {
+      curY += msg.sender === prevSender ? sameSenderGap : diffSenderGap;
     }
 
-    const isOwner = msg.sender === "owner";
-    const bubbleX = isOwner ? W - bubbleMargin - bubbleW : bubbleMargin;
+    if (msg.text === "[PHOTO]") {
+      // Render pet photo as image bubble (left-aligned, full image)
+      const imgX = bubbleMargin;
+      ctx.save();
+      ctx.beginPath();
+      ctx.roundRect(imgX, curY, photoW, photoH, imgBubbleRadius);
+      ctx.clip();
+      ctx.drawImage(img, imgX, curY, photoW, photoH);
+      ctx.restore();
 
-    ctx.fillStyle = isOwner ? "#007AFF" : "#E9E9EB";
-    ctx.beginPath();
-    ctx.roundRect(bubbleX, curY, bubbleW, bubbleH, bubbleRadius);
-    ctx.fill();
+      // Subtle border
+      ctx.strokeStyle = "rgba(0, 0, 0, 0.08)";
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.roundRect(imgX, curY, photoW, photoH, imgBubbleRadius);
+      ctx.stroke();
 
-    ctx.fillStyle = isOwner ? "#FFFFFF" : "#000000";
-    ctx.textAlign = "left";
-    ctx.font = `${fontSize}px ${fontFamily}`;
-    for (let j = 0; j < lines.length; j++) {
-      ctx.fillText(
-        lines[j],
-        bubbleX + bubblePadH,
-        curY + bubblePadV + (j + 1) * lineHeight - fontSize * 0.25
+      bubblePositions.push({ x: imgX, y: curY, w: photoW, h: photoH, sender: "pet", idx: i });
+      curY += photoH;
+      prevSender = "pet";
+    } else {
+      // Normal text bubble
+      const textMaxW = msgMaxWidth - bubblePadH * 2;
+      const lines = wrapText(ctx, msg.text, textMaxW);
+      const textH = lines.length * lineHeight;
+      const bubbleW = Math.min(
+        msgMaxWidth,
+        Math.max(...lines.map((l) => ctx.measureText(l).width)) + bubblePadH * 2
       );
-    }
+      const bubbleH = textH + bubblePadV * 2;
 
-    if (isOwner) {
-      lastOwnerBubbleBottomY = curY + bubbleH;
-    }
+      const isOwner = msg.sender === "owner";
+      const bubbleX = isOwner ? W - bubbleMargin - bubbleW : bubbleMargin;
 
-    curY += bubbleH;
+      ctx.fillStyle = isOwner ? "#007AFF" : "#E9E9EB";
+      ctx.beginPath();
+      ctx.roundRect(bubbleX, curY, bubbleW, bubbleH, bubbleRadius);
+      ctx.fill();
+
+      ctx.fillStyle = isOwner ? "#FFFFFF" : "#000000";
+      ctx.textAlign = "left";
+      ctx.font = `${fontSize}px ${fontFamily}`;
+      for (let j = 0; j < lines.length; j++) {
+        ctx.fillText(
+          lines[j],
+          bubbleX + bubblePadH,
+          curY + bubblePadV + (j + 1) * lineHeight - fontSize * 0.25
+        );
+      }
+
+      bubblePositions.push({ x: bubbleX, y: curY, w: bubbleW, h: bubbleH, sender: msg.sender, idx: i });
+
+      if (isOwner) {
+        lastOwnerBubbleBottomY = curY + bubbleH;
+      }
+
+      curY += bubbleH;
+      prevSender = msg.sender;
+    }
   }
 
   // "Delivered" text after last owner message
@@ -667,20 +693,59 @@ function drawConvo(
     ctx.fillText("Delivered", W - bubbleMargin, lastOwnerBubbleBottomY + 28);
   }
 
-  // --- 4. Brand footer (1820-1920px) ---
+  // === EMOJI REACTIONS (Tapbacks) — driven by AI ===
+  const reactionsToRender: { bubble: typeof bubblePositions[0]; emoji: string }[] = [];
+  for (const bp of bubblePositions) {
+    const msg = messages[bp.idx];
+    if (msg.reaction) {
+      reactionsToRender.push({ bubble: bp, emoji: msg.reaction });
+    }
+  }
+
+  for (const { bubble, emoji } of reactionsToRender) {
+    const pillW = 44;
+    const pillH = 36;
+    const isPet = bubble.sender === "pet";
+    // Position: top-right for pet bubbles, top-left for owner bubbles
+    const pillX = isPet
+      ? bubble.x + bubble.w - pillW + 8
+      : bubble.x - 8;
+    const pillY = bubble.y - pillH / 2 - 2;
+
+    // Pill background with border
+    ctx.fillStyle = "#F2F2F7";
+    ctx.beginPath();
+    ctx.roundRect(pillX, pillY, pillW, pillH, pillH / 2);
+    ctx.fill();
+    ctx.strokeStyle = "#D1D1D6";
+    ctx.lineWidth = 1.5;
+    ctx.beginPath();
+    ctx.roundRect(pillX, pillY, pillW, pillH, pillH / 2);
+    ctx.stroke();
+
+    // Emoji
+    ctx.font = "20px Arial, sans-serif";
+    ctx.textAlign = "center";
+    ctx.fillStyle = "#000000";
+    ctx.fillText(emoji, pillX + pillW / 2, pillY + pillH / 2 + 7);
+  }
+
+  // --- Brand footer — positioned below last message with padding ---
+  const footerTop = Math.max(curY + 60, 1820);
   ctx.fillStyle = CORAL;
-  ctx.fillRect(0, 1820, W, 100);
+  ctx.fillRect(0, footerTop, W, H - footerTop);
 
   const brandFontSize = 28;
   const ctaFontSize = 22;
   ctx.fillStyle = "white";
   ctx.textAlign = "left";
   ctx.font = `bold ${brandFontSize}px ${fontFamily}`;
-  ctx.fillText(`🐾 ${BRAND_URL}`, 32, 1880);
+  const footerCenterY = footerTop + (H - footerTop) / 2 + 10;
+  ctx.fillText(`🐾 ${BRAND_URL}`, 32, footerCenterY);
 
   ctx.textAlign = "right";
   ctx.font = `${ctaFontSize}px ${fontFamily}`;
-  ctx.fillText("Try it free \u2192", W - 32, 1880);
+  ctx.fillText("Try it free \u2192", W - 32, footerCenterY);
 
   return canvas;
 }
@@ -707,14 +772,14 @@ export async function compositeConvo(
 
 export async function compositeSubtitles(
   originalDataUrl: string,
-  caption: string
+  caption: { top: string; bottom: string }
 ): Promise<CompositeResult> {
   await ensureFontsReady();
 
   const img = await loadImage(originalDataUrl);
 
-  const standardCanvas = drawStandard(img, caption);
-  const storyCanvas = await drawStory(img, caption);
+  const standardCanvas = drawMeme(img, caption.top, caption.bottom);
+  const storyCanvas = await drawStory(img, caption.top, caption.bottom);
 
   return {
     standardDataUrl: standardCanvas.toDataURL("image/png"),

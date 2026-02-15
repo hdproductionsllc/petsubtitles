@@ -1,8 +1,15 @@
 import type { Metadata, Viewport } from "next";
-import { Fredoka, Nunito } from "next/font/google";
+import { Anton, Fredoka, Nunito } from "next/font/google";
 import ServiceWorkerRegistrar from "@/components/ServiceWorkerRegistrar";
 import InstallPrompt from "@/components/InstallPrompt";
 import "./globals.css";
+
+const anton = Anton({
+  variable: "--font-meme",
+  subsets: ["latin"],
+  weight: "400",
+  display: "swap",
+});
 
 const fredoka = Fredoka({
   variable: "--font-display",
@@ -54,17 +61,9 @@ export const metadata: Metadata = {
   openGraph: {
     title: "What My Pet Thinks",
     description:
-      "Find out what your pet is really thinking",
+      "Find out what your pet would text you",
     url: "https://whatmypetthinks.com",
     siteName: "What My Pet Thinks",
-    images: [
-      {
-        url: "/og-image.png",
-        width: 1200,
-        height: 630,
-        alt: "What My Pet Thinks — Find out what your pet is really thinking",
-      },
-    ],
     type: "website",
     locale: "en_US",
   },
@@ -72,8 +71,7 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     title: "What My Pet Thinks 🐾",
     description:
-      "Find out what your pet is really thinking",
-    images: ["/og-image.png"],
+      "Find out what your pet would text you",
   },
   icons: {
     apple: "/icons/icon-192.png",
@@ -124,7 +122,7 @@ export default function RootLayout({
         <link rel="apple-touch-startup-image" href="/splash/ipad-pro-11.png" media="(device-width: 834px) and (device-height: 1194px) and (-webkit-device-pixel-ratio: 2)" />
         <link rel="apple-touch-startup-image" href="/splash/ipad-pro-13.png" media="(device-width: 1024px) and (device-height: 1366px) and (-webkit-device-pixel-ratio: 2)" />
       </head>
-      <body className={`${fredoka.variable} ${nunito.variable}`}>
+      <body className={`${anton.variable} ${fredoka.variable} ${nunito.variable}`}>
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{
