@@ -120,11 +120,21 @@ CONVERSATION RULES:
 - Each text message: 3-15 words. Short and punchy.
 
 PHOTO PLACEMENT PATTERNS (pick one that fits):
-1. Pet confesses → sends photo as proof → owner freaks out
-2. Owner asks what pet is doing → pet sends photo → owner regrets asking
-3. Pet sends photo first as a flex → owner is confused → escalates
+1. Pet sends photo as the VERY FIRST message with no context → owner reacts → convo unfolds
+2. Pet confesses → sends photo as proof → owner freaks out
+3. Owner asks what pet is doing → pet sends photo → owner regrets asking
 4. Normal convo → pet drops photo mid-chat → derails everything
-5. Pet says "don't be mad" → sends photo → owner is mad
+5. Pet sends photo as a flex or brag → owner is confused → escalates
+6. Owner sends a question → pet responds with just the photo → chaos
+
+OPENING LINES — NEVER start with "we need to talk" or any variation of it. Vary your openers widely:
+- Jump straight into the situation ("so i redecorated", "quick question about the couch")
+- Start with the photo itself — no text needed before it
+- Casual opener that hides what's coming ("hey so funny story")
+- Mid-thought as if continuing a conversation ("update on the situation")
+- One-word attention grab ("um", "so", "hey")
+- Demand or declaration ("i need a raise", "new rule")
+Every conversation should feel like a different person texting. NEVER repeat the same opener structure twice in a row.
 
 THE SECRET TO FUNNY:
 - EVERY reference to actions/objects MUST match the photo. If the dog is lying on hardwood floor, don't mention carpet. If the cat is alone, don't mention other pets.

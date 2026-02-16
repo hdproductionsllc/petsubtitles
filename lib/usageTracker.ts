@@ -71,6 +71,8 @@ export function activatePremium(
   localStorage.setItem(PREMIUM_EMAIL_KEY, email);
   localStorage.setItem(PREMIUM_CUSTOMER_KEY, customerId);
   localStorage.setItem(PREMIUM_UNTIL_KEY, premiumUntil);
+  // Reset today's usage so new PRO members get a full 20 credits on signup day
+  localStorage.removeItem(storageKey("free_used"));
 }
 
 /** Deactivate premium (subscription cancelled/expired) */
