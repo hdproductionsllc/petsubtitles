@@ -72,26 +72,8 @@ export default function ShareButtons({
 
   const handleSave = async () => {
     trackEvent("share_tapped", { platform: "save" });
-    if (webShareAvailable) {
-      // On mobile, use share sheet — includes "Save Image" option for camera roll
-      try {
-        const res = await fetch(standardImageUrl);
-        const blob = await res.blob();
-        const file = new File([blob], generateFilename(voiceStyle, false, isConvo), { type: "image/png" });
-        await navigator.share({ files: [file] });
-        showToast("Saved! 🐾");
-      } catch (err) {
-        if (err instanceof Error && err.name !== "AbortError") {
-          // Fallback to download if share fails
-          downloadImage(standardImageUrl, generateFilename(voiceStyle, false, isConvo));
-          showToast("Saved! 🐾");
-        }
-      }
-    } else {
-      downloadImage(standardImageUrl, generateFilename(voiceStyle, false, isConvo));
-      const copied = await copyShareText();
-      showToast(copied ? "Saved! Caption copied 📋" : "Saved! 🐾");
-    }
+    downloadImage(standardImageUrl, generateFilename(voiceStyle, false, isConvo));
+    showToast("Saved! 🐾");
   };
 
   const handleInstagram = async () => {

@@ -178,7 +178,7 @@ export default function InstallPrompt() {
                 Install What My Pet Thinks
               </p>
               <p className="text-xs text-charcoal-light">
-                Launches instantly, works offline
+                Launches instantly from your home screen
               </p>
             </div>
           </div>

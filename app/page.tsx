@@ -320,11 +320,12 @@ export default function Home() {
 
   const handleFormatChange = useCallback((fmt: "caption" | "convo") => {
     setSelectedFormat(fmt);
-    // If we're in result state, auto re-translate with the new format
+    // When switching format in result state, go back to photo_selected so the user
+    // can pick a voice before translating again (don't auto-fire a new translation)
     if (appState === "result" && imageData) {
-      doTranslate(undefined, undefined, fmt);
+      setAppState("photo_selected");
     }
-  }, [appState, imageData, doTranslate]);
+  }, [appState, imageData]);
 
   const handleRestore = useCallback((item: HistoryItem) => {
     setCaption(item.caption);
