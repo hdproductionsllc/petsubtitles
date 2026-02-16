@@ -18,6 +18,9 @@ export default function InstallPrompt() {
     // Don't show if already installed as PWA
     if (window.matchMedia("(display-mode: standalone)").matches) return;
 
+    // Only show on mobile/tablet — not useful on desktop
+    if (!/Android|iPhone|iPad|iPod/i.test(navigator.userAgent)) return;
+
     // Check if previously dismissed
     const lastDismissed = localStorage.getItem("petsubtitles_install_dismissed");
     if (lastDismissed) {
