@@ -47,6 +47,10 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    const keyLen = (process.env.STRIPE_SECRET_KEY || "").length;
+    const keyEnd = (process.env.STRIPE_SECRET_KEY || "").slice(-4);
+    console.log("Stripe key length:", keyLen, "ends with:", keyEnd);
+
     const customers = await stripe.customers.list({
       email: email.toLowerCase().trim(),
       limit: 10,
@@ -76,12 +80,15 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ found: false });
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
-    console.error("Restore error:", message);
+    const key = process.env.STRIPE_SECRET_KEY || "";
+    console.error("Restore error:", message, "key length:", key.length);
     return NextResponse.json(
       {
         found: false,
         error: "Could not look up subscription. Please try again.",
         debug: message,
+        keyLength: key.length,
+        keyPrefix: key.slice(0, 8),
       },
       { status: 500 }
     );
