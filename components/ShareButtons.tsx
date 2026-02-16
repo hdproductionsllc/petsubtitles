@@ -46,9 +46,13 @@ export default function ShareButtons({
     ? "find out what your pet would text you 😂 whatmypetthinks.com #WhatMyPetThinks"
     : "find out what your pet is really thinking 😂 whatmypetthinks.com #WhatMyPetThinks";
 
-  const copyShareText = async () => {
+  const captionText = isConvo
+    ? `${caption}\n\nfind out what your pet would text you 😂 whatmypetthinks.com #WhatMyPetThinks`
+    : `"${caption}"\n\nfind out what your pet is really thinking 😂 whatmypetthinks.com #WhatMyPetThinks`;
+
+  const copyCaption = async () => {
     try {
-      await navigator.clipboard.writeText(shareText);
+      await navigator.clipboard.writeText(captionText);
       return true;
     } catch {
       return false;
@@ -79,7 +83,7 @@ export default function ShareButtons({
   const handleInstagram = async () => {
     trackEvent("share_tapped", { platform: "instagram" });
     downloadImage(storyImageUrl, generateFilename(voiceStyle, true, isConvo));
-    await copyShareText();
+    await copyCaption();
     showToast("Image saved! Caption copied 📋");
     setTimeout(() => openInstagram(), 800);
   };
@@ -87,7 +91,7 @@ export default function ShareButtons({
   const handleTikTok = async () => {
     trackEvent("share_tapped", { platform: "tiktok" });
     downloadImage(standardImageUrl, generateFilename(voiceStyle, false, isConvo));
-    await copyShareText();
+    await copyCaption();
     showToast("Image saved! Caption copied 📋");
     setTimeout(() => openTikTok(), 800);
 
@@ -96,7 +100,7 @@ export default function ShareButtons({
   const handleX = async () => {
     trackEvent("share_tapped", { platform: "x" });
     downloadImage(standardImageUrl, generateFilename(voiceStyle, false, isConvo));
-    await copyShareText();
+    await copyCaption();
     showToast("Image saved! Caption copied 📋");
     setTimeout(() => shareToX(caption, isConvo), 800);
 
@@ -105,7 +109,7 @@ export default function ShareButtons({
   const handleFacebook = async () => {
     trackEvent("share_tapped", { platform: "facebook" });
     downloadImage(standardImageUrl, generateFilename(voiceStyle, false, isConvo));
-    await copyShareText();
+    await copyCaption();
     showToast("Image saved! Caption copied 📋");
     setTimeout(() => shareToFacebook(), 800);
 
@@ -113,7 +117,7 @@ export default function ShareButtons({
 
   const handleCopy = async () => {
     trackEvent("share_tapped", { platform: "copy_link" });
-    await navigator.clipboard.writeText(shareText).catch(() => {});
+    await copyCaption();
     showToast("Caption copied to clipboard! 📋");
 
   };
