@@ -5,13 +5,14 @@ import { CAROUSEL_EXAMPLES, type CarouselExample } from "@/lib/sampleData";
 
 interface Props {
   onTryIt: () => void;
+  onRestore?: () => void;
 }
 
 const MSG_DELAY = 700;
 const PAUSE_AFTER_DONE = 3000;
 const CAPTION_HOLD = 4000;
 
-export default function ExampleCarousel({ onTryIt }: Props) {
+export default function ExampleCarousel({ onTryIt, onRestore }: Props) {
   const [exIndex, setExIndex] = useState(0);
   const [visibleCount, setVisibleCount] = useState(0);
   const [captionVisible, setCaptionVisible] = useState(false);
@@ -114,6 +115,16 @@ export default function ExampleCarousel({ onTryIt }: Props) {
       >
         Try It Free
       </button>
+
+      {/* Restore link */}
+      {onRestore && (
+        <button
+          onClick={onRestore}
+          className="mt-2 w-full py-2 text-sm text-teal underline hover:text-teal-dark"
+        >
+          Already PRO? Restore purchase
+        </button>
+      )}
     </div>
   );
 }

@@ -75,11 +75,13 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({ found: false });
   } catch (err) {
-    console.error("Restore error:", err);
+    const message = err instanceof Error ? err.message : String(err);
+    console.error("Restore error:", message);
     return NextResponse.json(
       {
         found: false,
         error: "Could not look up subscription. Please try again.",
+        debug: message,
       },
       { status: 500 }
     );
