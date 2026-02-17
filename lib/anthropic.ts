@@ -14,14 +14,15 @@ const SYSTEM_PROMPT = `You are a comedy writer creating classic meme captions fo
 
 STEP 1 — ANALYZE THE PHOTO (mandatory):
 Before writing ANYTHING, describe what you LITERALLY see:
-- What animal? Expression? Body language? What are they doing?
+- What animal(s)? Be PRECISE about species — look at ears, snout shape, body proportions, and fur to distinguish cats from dogs. If multiple animals are visible, identify EACH ONE separately. Cats have pointed ears, flat faces, and retractable claws. Dogs have varied ear shapes but distinct snout length and body structure. NEVER guess — examine each animal carefully.
+- Expression? Body language? What are they doing?
 - What specific objects, surroundings, people, or other animals are visible?
 - What makes this photo funny or interesting?
 
 STEP 2 — WRITE THE MEME:
 Return a JSON object with four fields:
 {
-  "analysis": "Brief description of what you see",
+  "analysis": "Species identification + brief description of what you see",
   "top": "SETUP LINE",
   "bottom": "PUNCHLINE",
   "petFaceY": 0.0 to 1.0
@@ -80,7 +81,8 @@ const CONVO_SYSTEM_PROMPT = `You are the funniest comedy writer alive, writing f
 
 STEP 1 — ANALYZE THE PHOTO (mandatory):
 Before writing ANYTHING, describe what you LITERALLY see:
-- What animal? What breed/color? What expression (eyes, mouth, ears, posture)?
+- What animal(s)? Be PRECISE about species for EVERY animal in the photo — look at ear shape, snout, body proportions, and fur texture to distinguish cats from dogs. Cats have triangular pointed ears, shorter snouts, and compact bodies. Dogs have longer snouts and varied but distinct ear shapes. If you see multiple animals, identify EACH ONE's species and breed/color separately. NEVER assume one is a dog just because another is a cat.
+- What expression (eyes, mouth, ears, posture)?
 - What is the pet DOING? (lying down, sitting, standing, mid-action, staring, sleeping?)
 - What SPECIFIC objects/surroundings are visible? (furniture, floor type, toys, food, clothing, other animals, human hands/body?)
 - What's the setting? (indoors/outdoors, room type, lighting, time of day?)
@@ -92,7 +94,7 @@ Based ONLY on what you described in Step 1, pick the funniest comedic angle. The
 STEP 3 — WRITE THE CONVERSATION:
 Return a JSON object with four fields:
 {
-  "analysis": "Brief description of what you see in the photo",
+  "analysis": "Species of each animal + brief description of what you see",
   "story": "One sentence: the comedic angle you chose and why",
   "messages": [{"sender":"pet","text":"..."},{"sender":"owner","text":"..."}, ...],
   "reactions": [{"index": 3, "emoji": "😂"}, {"index": 5, "emoji": "❤️"}]
@@ -144,10 +146,11 @@ THE SECRET TO FUNNY:
 - Pets text in all lowercase, minimal punctuation, periods only for passive aggression ("fine." "ok.")
 - Owners text like normal exasperated humans
 
-SPECIES PERSONALITY:
+SPECIES PERSONALITY (match to what you ACTUALLY identified in Step 1):
 - Cats: entitled, one-word dismissals, "no" is their favorite word
 - Dogs: ALL CAPS when excited, food-obsessed, separation anxiety in text form
 - Small dogs: texts threats they cannot back up
+- Multiple pets: If you see two cats, BOTH are cats. If you see two dogs, BOTH are dogs. Use the correct species personality for each animal based on your Step 1 analysis.
 
 GENDER: NEVER assume gender for any pet, animal, or person. Use "they/them" or gender-neutral terms ("sibling" not "brother/sister", "human" not "mom/dad"). Exception: if the user specifies pronouns, use those for that pet only.
 
@@ -245,7 +248,7 @@ export async function translatePetPhoto(
 
   const userText = `Create a two-part meme caption for this pet photo.${
     petName ? ` The pet's name is ${petName}.` : ""
-  }${pronouns ? ` Use ${pronouns} pronouns.` : ""} Return ONLY the JSON object, no other text.`;
+  }${pronouns ? ` Use ${pronouns} pronouns.` : ""} First carefully identify every animal's species in the "analysis" field, then write the caption. Return ONLY the JSON object, no other text.`;
 
   async function attempt(): Promise<MemeCaption> {
     const response = await client.messages.create({
@@ -324,7 +327,7 @@ export async function generatePetConvo(
   const angle = pickFreshAngle();
   const userText = `Create a text conversation between this pet and their owner. The pet's contact name is "${contactName}".${
     pronouns ? ` Use ${pronouns} pronouns for the pet.` : ""
-  }\n\nComedic angle to explore (adapt to what you see in the photo — skip if it doesn't fit the image): ${angle}\n\nReturn ONLY the JSON object, no other text.`;
+  }\n\nComedic angle to explore (adapt to what you see in the photo — skip if it doesn't fit the image): ${angle}\n\nIMPORTANT: In your "analysis" field, precisely identify the species of EVERY animal visible (cat vs dog vs other). Then write the conversation matching those species. Return ONLY the JSON object, no other text.`;
 
   async function attempt(): Promise<ConvoMessage[]> {
     const response = await client.messages.create({
