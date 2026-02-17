@@ -240,7 +240,11 @@ export default function Home() {
       if (format === "convo") {
         setConvoMessages(data.messages);
         displayCaption = "Text Convo";
-        setCaption("Text conversation");
+        const convoText = (data.messages as ConvoMessage[])
+          .filter((m: ConvoMessage) => m.text !== "[PHOTO]")
+          .map((m: ConvoMessage) => `${m.sender === "pet" ? (nameToUse || "Pet") : "Owner"}: ${m.text}`)
+          .join("\n");
+        setCaption(convoText);
         trackEvent("convo_received", { voice_style: voiceToUse });
 
         try {
