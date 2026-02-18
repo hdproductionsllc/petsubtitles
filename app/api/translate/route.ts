@@ -110,7 +110,7 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { imageBase64, mediaType, voiceStyle = "funny", petName, pronouns, format = "caption", customerId } = body;
+    const { imageBase64, mediaType, voiceStyle = "funny", petName, gender, format = "caption", customerId } = body;
 
     // Validate customerId format (Stripe customer IDs start with "cus_")
     const validCustomerId = typeof customerId === "string" && customerId.startsWith("cus_") ? customerId : null;
@@ -169,7 +169,7 @@ export async function POST(request: NextRequest) {
       ? petName.replace(/[^a-zA-Z0-9 .\-']/g, "").slice(0, 20).trim() || undefined
       : undefined;
     const validGenders = ["male", "female"];
-    const cleanPronouns = validGenders.includes(pronouns) ? pronouns : undefined;
+    const cleanGender = validGenders.includes(gender) ? gender : undefined;
 
     if (format === "convo") {
       const messages = await generatePetConvo(
@@ -177,7 +177,7 @@ export async function POST(request: NextRequest) {
         mediaType as MediaType,
         voiceStyle as VoiceStyle,
         cleanName || undefined,
-        cleanPronouns
+        cleanGender
       );
       return NextResponse.json({ messages });
     }
@@ -187,7 +187,7 @@ export async function POST(request: NextRequest) {
       mediaType as MediaType,
       voiceStyle as VoiceStyle,
       cleanName || undefined,
-      cleanPronouns
+      cleanGender
     );
 
     return NextResponse.json({

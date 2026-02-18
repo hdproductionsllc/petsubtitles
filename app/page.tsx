@@ -81,7 +81,7 @@ export default function Home() {
   const [convoMessages, setConvoMessages] = useState<ConvoMessage[]>([]);
   const [memeCaption, setMemeCaption] = useState<{ top: string; bottom: string } | null>(null);
   const [petName, setPetName] = useState("");
-  const [petPronouns, setPetPronouns] = useState("");
+  const [petGender, setPetGender] = useState("");
   const [isFirstTime, setIsFirstTime] = useState(true);
   const [usedVoices, setUsedVoices] = useState<VoiceStyle[]>([]);
 
@@ -93,7 +93,7 @@ export default function Home() {
     trackEvent("page_load");
     const saved = loadSavedPersonalization();
     if (saved.name) setPetName(saved.name);
-    if (saved.pronouns) setPetPronouns(saved.pronouns);
+    if (saved.gender) setPetGender(saved.gender);
     if (localStorage.getItem("wmpt_has_translated")) {
       setIsFirstTime(false);
     }
@@ -226,7 +226,7 @@ export default function Home() {
           mediaType: imageData.mediaType,
           voiceStyle: voiceToUse,
           petName: nameToUse || undefined,
-          pronouns: petPronouns || undefined,
+          gender: petGender || undefined,
           format,
           customerId: getPremiumCustomerId() || undefined,
         }),
@@ -311,7 +311,7 @@ export default function Home() {
       // Mark first translation complete + save name if provided
       if (!localStorage.getItem("wmpt_has_translated")) {
         localStorage.setItem("wmpt_has_translated", "true");
-        if (nameToUse) savePersonalization(nameToUse, petPronouns);
+        if (nameToUse) savePersonalization(nameToUse, petGender);
         trackEvent("first_translation");
       }
       setIsFirstTime(false);
@@ -326,7 +326,7 @@ export default function Home() {
       );
       setAppState("error");
     }
-  }, [imageData, selectedVoice, selectedFormat, petName, petPronouns, refreshCredits, scanForPets]);
+  }, [imageData, selectedVoice, selectedFormat, petName, petGender, refreshCredits, scanForPets]);
 
   const handleVoiceSelect = useCallback((voice: VoiceStyle) => {
     trackEvent("voice_style_selected", { voice_style: voice });
@@ -429,9 +429,9 @@ export default function Home() {
       {appState === "photo_selected" && !isFirstTime && (
         <PersonalizeSection
           petName={petName}
-          petPronouns={petPronouns}
+          petGender={petGender}
           onNameChange={setPetName}
-          onPronounsChange={setPetPronouns}
+          onGenderChange={setPetGender}
         />
       )}
 

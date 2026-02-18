@@ -3,7 +3,7 @@
 import { useState } from "react";
 
 const STORAGE_KEY_NAME = "petsubtitles_pet_name";
-const STORAGE_KEY_PRONOUNS = "petsubtitles_pet_pronouns";
+const STORAGE_KEY_GENDER = "petsubtitles_pet_gender";
 
 const GENDER_OPTIONS = [
   { value: "male", label: "Boy" },
@@ -12,42 +12,42 @@ const GENDER_OPTIONS = [
 
 interface Props {
   petName: string;
-  petPronouns: string;
+  petGender: string;
   onNameChange: (name: string) => void;
-  onPronounsChange: (pronouns: string) => void;
+  onGenderChange: (gender: string) => void;
 }
 
-export function loadSavedPersonalization(): { name: string; pronouns: string } {
-  if (typeof window === "undefined") return { name: "", pronouns: "" };
+export function loadSavedPersonalization(): { name: string; gender: string } {
+  if (typeof window === "undefined") return { name: "", gender: "" };
   return {
     name: localStorage.getItem(STORAGE_KEY_NAME) || "",
-    pronouns: localStorage.getItem(STORAGE_KEY_PRONOUNS) || "",
+    gender: localStorage.getItem(STORAGE_KEY_GENDER) || localStorage.getItem("petsubtitles_pet_pronouns") || "",
   };
 }
 
-export function savePersonalization(name: string, pronouns: string): void {
+export function savePersonalization(name: string, gender: string): void {
   if (typeof window === "undefined") return;
   localStorage.setItem(STORAGE_KEY_NAME, name);
-  localStorage.setItem(STORAGE_KEY_PRONOUNS, pronouns);
+  localStorage.setItem(STORAGE_KEY_GENDER, gender);
 }
 
 export default function PersonalizeSection({
   petName,
-  petPronouns,
+  petGender,
   onNameChange,
-  onPronounsChange,
+  onGenderChange,
 }: Props) {
   const [isOpen, setIsOpen] = useState(!!petName);
 
   const handleNameChange = (name: string) => {
     const trimmed = name.slice(0, 20);
     onNameChange(trimmed);
-    savePersonalization(trimmed, petPronouns);
+    savePersonalization(trimmed, petGender);
   };
 
-  const handlePronounsChange = (pronouns: string) => {
-    const newVal = pronouns === petPronouns ? "" : pronouns;
-    onPronounsChange(newVal);
+  const handleGenderChange = (gender: string) => {
+    const newVal = gender === petGender ? "" : gender;
+    onGenderChange(newVal);
     savePersonalization(petName, newVal);
   };
 
@@ -85,9 +85,9 @@ export default function PersonalizeSection({
             {GENDER_OPTIONS.map((opt) => (
               <button
                 key={opt.value}
-                onClick={() => handlePronounsChange(opt.value)}
+                onClick={() => handleGenderChange(opt.value)}
                 className={`rounded-full px-3 py-1 text-xs font-semibold transition ${
-                  petPronouns === opt.value
+                  petGender === opt.value
                     ? "bg-amber text-white"
                     : "bg-gray-100 text-charcoal-light hover:bg-gray-200"
                 }`}
