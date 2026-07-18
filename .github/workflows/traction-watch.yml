@@ -1,0 +1,46 @@
+name: Traction watch
+
+on:
+  schedule:
+    - cron: "37 */6 * * *"
+  workflow_dispatch:
+
+permissions:
+  issues: write
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check traction stats and alert
+        env:
+          GH_TOKEN: ${{ github.token }}
+          STATS_TOKEN: ${{ secrets.STATS_TOKEN }}
+        run: |
+          STATS=$(curl -sf "https://www.whatmypetthinks.com/api/stats" -H "Authorization: Bearer $STATS_TOKEN") || { echo "stats endpoint unreachable"; exit 0; }
+          echo "$STATS"
+          TODAY=$(echo "$STATS" | jq -r '.generationsToday // 0')
+          YDAY=$(echo "$STATS" | jq -r '.generationsYesterday // 0')
+          SUBS=$(echo "$STATS" | jq -r '.activeSubscriptions // 0')
+          NEW7=$(echo "$STATS" | jq -r '.newSubscriptionsLast7d // 0')
+          DATE=$(date -u +%F)
+
+          ALERT=""
+          [ "$TODAY" -ge 2000 ] && ALERT="MAJOR spike: $TODAY generations today — check Anthropic spend cap NOW"
+          [ -z "$ALERT" ] && [ "$TODAY" -ge 500 ] && ALERT="Viral traction: $TODAY generations today"
+          [ -z "$ALERT" ] && [ "$YDAY" -ge 500 ] && ALERT="Viral traction: $YDAY generations yesterday"
+          [ -z "$ALERT" ] && [ "$NEW7" -ge 5 ] && ALERT="Paid traction: $NEW7 new PRO subs this week"
+          [ -z "$ALERT" ] && [ "$SUBS" -ge 10 ] && ALERT="Milestone: $SUBS active PRO subscribers"
+
+          if [ -z "$ALERT" ]; then echo "No thresholds crossed."; exit 0; fi
+
+          # One alert issue per day — comment instead of duplicating
+          EXISTING=$(gh issue list --repo "$GITHUB_REPOSITORY" --state open --search "Traction alert $DATE in:title" --json number --jq '.[0].number // empty')
+          if [ -n "$EXISTING" ]; then
+            gh issue comment "$EXISTING" --repo "$GITHUB_REPOSITORY" --body "Update: $ALERT — stats: $STATS"
+            exit 0
+          fi
+
+          gh issue create --repo "$GITHUB_REPOSITORY" \
+            --title "🚨 Traction alert $DATE: $ALERT" \
+            --body "$(printf 'Automated traction watch (every 6h).\n\n```json\n%s\n```\n\nNext actions:\n- Check GA4 realtime + Vercel function logs ([caption]/[convo]/[reply] lines show per-gen cost + cache hits)\n- Verify Anthropic spend cap headroom: console.anthropic.com\n- Post follow-up content while the algorithm is hot\n- If generation counts are null, the Supabase project is still down — restore it' "$STATS")"
