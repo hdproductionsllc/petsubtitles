@@ -246,9 +246,21 @@ export async function translatePetPhoto(
   gender?: string
 ): Promise<MemeCaption> {
   const voiceModifier = VOICE_MODIFIERS[voiceStyle];
-  const systemPrompt = voiceModifier
-    ? `${SYSTEM_PROMPT}\n\nIMPORTANT additional voice direction (apply to both top and bottom lines): ${voiceModifier}`
-    : SYSTEM_PROMPT;
+  // Two-block system: the big base prompt is cached (identical every call),
+  // the per-request voice modifier rides along uncached.
+  const systemBlocks: Anthropic.TextBlockParam[] = [
+    {
+      type: "text",
+      text: SYSTEM_PROMPT,
+      cache_control: { type: "ephemeral" },
+    },
+  ];
+  if (voiceModifier) {
+    systemBlocks.push({
+      type: "text",
+      text: `IMPORTANT additional voice direction (apply to both top and bottom lines): ${voiceModifier}`,
+    });
+  }
 
   const genderHint = gender === "male" ? " The pet is a boy." : gender === "female" ? " The pet is a girl." : "";
   const nameHint = petName ? ` The pet's name is ${petName}. Do NOT invent names for any other animals — use fun terms like "my associate" or "the accomplice" instead.` : "";
@@ -256,9 +268,12 @@ export async function translatePetPhoto(
 
   async function attempt(): Promise<MemeCaption> {
     const response = await client.messages.create({
-      model: "claude-sonnet-4-6",
-      max_tokens: 512,
-      system: systemPrompt,
+      model: "claude-sonnet-5",
+      max_tokens: 768,
+      // Sonnet 5 defaults to adaptive thinking (extra hidden tokens + latency);
+      // captions don't need it — keep generations fast and cheap.
+      thinking: { type: "disabled" },
+      system: systemBlocks,
       messages: [
         {
           role: "user",
@@ -276,6 +291,9 @@ export async function translatePetPhoto(
         },
       ],
     });
+
+    const u = response.usage;
+    console.log(`[caption] tokens in=${u.input_tokens} out=${u.output_tokens} cacheWrite=${u.cache_creation_input_tokens} cacheRead=${u.cache_read_input_tokens}`);
 
     const textBlock = response.content.find((block) => block.type === "text");
     if (!textBlock || textBlock.type !== "text") {
@@ -331,9 +349,19 @@ export async function generatePetConvo(
   gender?: string
 ): Promise<ConvoMessage[]> {
   const voiceModifier = VOICE_MODIFIERS[voiceStyle];
-  const systemPrompt = voiceModifier
-    ? `${CONVO_SYSTEM_PROMPT}\n\nIMPORTANT additional voice direction (apply to PET messages only): ${voiceModifier}`
-    : CONVO_SYSTEM_PROMPT;
+  const systemBlocks: Anthropic.TextBlockParam[] = [
+    {
+      type: "text",
+      text: CONVO_SYSTEM_PROMPT,
+      cache_control: { type: "ephemeral" },
+    },
+  ];
+  if (voiceModifier) {
+    systemBlocks.push({
+      type: "text",
+      text: `IMPORTANT additional voice direction (apply to PET messages only): ${voiceModifier}`,
+    });
+  }
 
   const contactName = petName || "Pet";
   const angle = pickFreshAngle();
@@ -343,9 +371,10 @@ export async function generatePetConvo(
 
   async function attempt(): Promise<ConvoMessage[]> {
     const response = await client.messages.create({
-      model: "claude-sonnet-4-6",
-      max_tokens: 1024,
-      system: systemPrompt,
+      model: "claude-sonnet-5",
+      max_tokens: 1536,
+      thinking: { type: "disabled" },
+      system: systemBlocks,
       messages: [
         {
           role: "user",
@@ -363,6 +392,9 @@ export async function generatePetConvo(
         },
       ],
     });
+
+    const u = response.usage;
+    console.log(`[convo] tokens in=${u.input_tokens} out=${u.output_tokens} cacheWrite=${u.cache_creation_input_tokens} cacheRead=${u.cache_read_input_tokens}`);
 
     const textBlock = response.content.find((block) => block.type === "text");
     if (!textBlock || textBlock.type !== "text") {

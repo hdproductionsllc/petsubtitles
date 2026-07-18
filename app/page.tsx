@@ -27,6 +27,8 @@ import {
   isPremiumExpired,
   reverifyPremium,
   getPremiumCustomerId,
+  isDramaticUnlocked,
+  grantShareUnlock,
 } from "@/lib/usageTracker";
 import { trackEvent } from "@/lib/analytics";
 import { playMessageSound } from "@/lib/sounds";
@@ -84,6 +86,8 @@ export default function Home() {
   const [petGender, setPetGender] = useState("");
   const [isFirstTime, setIsFirstTime] = useState(true);
   const [usedVoices, setUsedVoices] = useState<VoiceStyle[]>([]);
+  const [dramaticLocked, setDramaticLocked] = useState(false);
+  const [unlockHint, setUnlockHint] = useState(false);
 
   const photoCaptureRef = useRef<PhotoCaptureHandle>(null);
 
@@ -101,6 +105,7 @@ export default function Home() {
     if (isPremium() && isPremiumExpired()) {
       reverifyPremium().then(() => refreshCredits());
     }
+    setDramaticLocked(!isDramaticUnlocked());
   }, []);
 
   // Track online/offline
@@ -115,6 +120,13 @@ export default function Home() {
       window.removeEventListener("online", goOnline);
     };
   }, []);
+
+  // Analytics: the share-to-unlock prompt was shown on a result card
+  useEffect(() => {
+    if (appState === "result" && dramaticLocked) {
+      trackEvent("share_unlock_offered", { source: "result_card" });
+    }
+  }, [appState, dramaticLocked]);
 
   const refreshCredits = useCallback(() => {
     setCreditRefresh((k) => k + 1);
@@ -337,6 +349,25 @@ export default function Home() {
     }
   }, [appState, imageData, doTranslate]);
 
+  /** Tapping a locked voice: nudge toward sharing (the unlock), never a paywall */
+  const handleLockedVoice = useCallback((voice: VoiceStyle) => {
+    trackEvent("share_unlock_offered", { source: "voice_tap", voice_style: voice });
+    setUnlockHint(true);
+    setTimeout(() => setUnlockHint(false), 4000);
+  }, []);
+
+  /** Confirmed share: unlock Dramatic Narrator for today (+3 bonus gens, once/day) */
+  const handleShareSuccess = useCallback((): string | null => {
+    const wasOutOfCredits = !hasCredits();
+    if (!grantShareUnlock()) return null;
+    trackEvent("share_unlock_granted");
+    setDramaticLocked(false);
+    refreshCredits();
+    return wasOutOfCredits
+      ? "🎬 Dramatic Narr unlocked + 3 bonus translations!"
+      : "🎬 Dramatic Narrator unlocked for today!";
+  }, [refreshCredits]);
+
   const handleFormatChange = useCallback((fmt: "caption" | "convo") => {
     setSelectedFormat(fmt);
     // When switching format in result state, go back to photo_selected so the user
@@ -366,11 +397,13 @@ export default function Home() {
     doTranslate();
   }, [doTranslate, selectedFormat]);
 
-  // Smart voice suggestion: pick next untried voice, or use the suggestion map
+  // Smart voice suggestion: pick next untried voice, or use the suggestion map.
+  // Never suggest a voice that's share-locked.
   const suggestedVoice: VoiceStyle = (() => {
+    const isLockedVoice = (v: VoiceStyle) => v === "dramatic" && dramaticLocked;
     const suggestion = VOICE_SUGGESTIONS[selectedVoice];
-    if (!usedVoices.includes(suggestion)) return suggestion;
-    const untried = ALL_VOICES.find((v) => !usedVoices.includes(v));
+    if (!usedVoices.includes(suggestion) && !isLockedVoice(suggestion)) return suggestion;
+    const untried = ALL_VOICES.find((v) => !usedVoices.includes(v) && !isLockedVoice(v));
     return untried ?? "funny";
   })();
   const suggestedVoiceName = VOICE_DISPLAY_NAMES[suggestedVoice];
@@ -437,12 +470,23 @@ export default function Home() {
 
       {/* Voice & format selector — show when photo selected, translating, OR in result state (returning users only) */}
       {(appState === "photo_selected" || appState === "translating" || appState === "result") && !isFirstTime && (
-        <VoiceSelector
-          selected={selectedVoice}
-          onSelect={handleVoiceSelect}
-          format={selectedFormat}
-          onFormatChange={handleFormatChange}
-        />
+        <>
+          <VoiceSelector
+            selected={selectedVoice}
+            onSelect={handleVoiceSelect}
+            format={selectedFormat}
+            onFormatChange={handleFormatChange}
+            lockedVoices={dramaticLocked ? ["dramatic"] : undefined}
+            onLockedSelect={handleLockedVoice}
+          />
+          {unlockHint && (
+            <div className="mx-3 mt-1 rounded-xl bg-amber/10 px-3 py-1.5 text-center animate-fade-up">
+              <p className="text-xs font-semibold text-charcoal">
+                🔒 Share any result to unlock 🎬 Dramatic Narr for today
+              </p>
+            </div>
+          )}
+        </>
       )}
 
       {/* Name input for first-timers — show above translate button */}
@@ -527,6 +571,15 @@ export default function Home() {
             </div>
           )}
 
+          {/* Share-to-unlock prompt: discovery framing, never credits/paywall */}
+          {dramaticLocked && (
+            <div className="mx-3 mt-1.5 rounded-xl bg-amber/5 px-3 py-1.5 text-center">
+              <p className="text-xs text-charcoal-light">
+                🔒 Share this to unlock the 🎬 Dramatic Narrator voice for today
+              </p>
+            </div>
+          )}
+
           <ShareButtons
             standardImageUrl={standardImage}
             storyImageUrl={storyImage}
@@ -538,6 +591,7 @@ export default function Home() {
             suggestedVoiceName={suggestedVoiceName}
             suggestedVoiceEmoji={suggestedVoiceEmoji}
             onNewPhoto={handleNewPhoto}
+            onShareSuccess={handleShareSuccess}
           />
         </>
       )}

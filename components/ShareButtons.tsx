@@ -25,6 +25,8 @@ interface Props {
   suggestedVoiceName?: string;
   suggestedVoiceEmoji?: string;
   onNewPhoto?: () => void;
+  /** Called after a confirmed share; returns a toast message to show, or null */
+  onShareSuccess?: () => string | null;
 }
 
 export default function ShareButtons({
@@ -38,6 +40,7 @@ export default function ShareButtons({
   suggestedVoiceName,
   suggestedVoiceEmoji,
   onNewPhoto,
+  onShareSuccess,
 }: Props) {
   const [toast, setToast] = useState<string | null>(null);
   const webShareAvailable = canUseWebShare();
@@ -64,14 +67,22 @@ export default function ShareButtons({
     setTimeout(() => setToast(null), 3000);
   };
 
+  /** After a confirmed share, let the app grant the share unlock and toast it */
+  const reportShareSuccess = () => {
+    const message = onShareSuccess?.();
+    if (message) showToast(message);
+  };
+
   const handleShare = async () => {
     trackEvent("share_tapped", { platform: "share_feed" });
-    await shareImage(standardImageUrl, caption, voiceStyle, false, isConvo);
+    const shared = await shareImage(standardImageUrl, caption, voiceStyle, false, isConvo);
+    if (shared) reportShareSuccess();
   };
 
   const handleShareStory = async () => {
     trackEvent("share_tapped", { platform: "share_story" });
-    await shareImage(storyImageUrl, caption, voiceStyle, true, isConvo);
+    const shared = await shareImage(storyImageUrl, caption, voiceStyle, true, isConvo);
+    if (shared) reportShareSuccess();
   };
 
   const handleSave = async () => {
@@ -83,11 +94,17 @@ export default function ShareButtons({
     }
   };
 
+  /** Desktop platform flows: save image + copy caption, then surface any unlock */
+  const savedToast = () => {
+    const message = onShareSuccess?.();
+    showToast(message ? `Image saved! ${message}` : "Image saved! Caption copied 📋");
+  };
+
   const handleInstagram = async () => {
     trackEvent("share_tapped", { platform: "instagram" });
     downloadImage(storyImageUrl, generateFilename(voiceStyle, true, isConvo));
     await copyCaption();
-    showToast("Image saved! Caption copied 📋");
+    savedToast();
     setTimeout(() => openInstagram(), 800);
   };
 
@@ -95,7 +112,7 @@ export default function ShareButtons({
     trackEvent("share_tapped", { platform: "tiktok" });
     downloadImage(standardImageUrl, generateFilename(voiceStyle, false, isConvo));
     await copyCaption();
-    showToast("Image saved! Caption copied 📋");
+    savedToast();
     setTimeout(() => openTikTok(), 800);
 
   };
@@ -104,7 +121,7 @@ export default function ShareButtons({
     trackEvent("share_tapped", { platform: "x" });
     downloadImage(standardImageUrl, generateFilename(voiceStyle, false, isConvo));
     await copyCaption();
-    showToast("Image saved! Caption copied 📋");
+    savedToast();
     setTimeout(() => shareToX(caption, isConvo), 800);
 
   };
@@ -113,7 +130,7 @@ export default function ShareButtons({
     trackEvent("share_tapped", { platform: "facebook" });
     downloadImage(standardImageUrl, generateFilename(voiceStyle, false, isConvo));
     await copyCaption();
-    showToast("Image saved! Caption copied 📋");
+    savedToast();
     setTimeout(() => shareToFacebook(), 800);
 
   };

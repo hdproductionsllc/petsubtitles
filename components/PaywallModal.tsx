@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useEffect, useRef, useState } from "react";
 import {
@@ -176,7 +176,7 @@ export default function PaywallModal({
             {proHasCredits
               ? `You have ${creditsLeft} translation${creditsLeft === 1 ? "" : "s"} left today`
               : userIsPremium
-                ? "Even PRO members have a daily limit. Come back tomorrow for 20 more!"
+                ? "Even PRO members have a daily limit. Come back tomorrow for 15 more!"
                 : "You've used your 3 free translations today"}
           </p>
         </div>
@@ -194,7 +194,7 @@ export default function PaywallModal({
         ) : (
           <div className="mt-5">
             <p className="mb-3 text-center text-sm text-charcoal-light">
-              Unlock 20/day with PRO
+              Unlock 15/day with PRO
             </p>
 
             {/* Subscribe button */}
@@ -203,11 +203,11 @@ export default function PaywallModal({
               disabled={isSubscribing}
               className="btn-press w-full rounded-2xl bg-amber px-6 py-4 text-lg font-bold text-white shadow-lg transition hover:bg-amber-dark min-h-[52px] disabled:opacity-50"
             >
-              {isSubscribing ? "Opening checkout..." : "Go PRO — $9.99/mo"}
+              {isSubscribing ? "Opening checkout..." : "Go PRO — $4.99/mo"}
             </button>
 
             <p className="mt-2 text-center text-xs text-charcoal/40">
-              20 translations/day · Cancel anytime
+              15 translations/day · Cancel anytime
             </p>
 
             {/* Restore purchase */}

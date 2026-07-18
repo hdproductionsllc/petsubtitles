@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { detectPet } from "@/lib/anthropic";
+import { resizeForClaude } from "@/lib/serverImage";
 
 export const maxDuration = 15;
 
@@ -40,7 +41,8 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const hasPet = await detectPet(imageBase64, mediaType as MediaType);
+    const resized = await resizeForClaude(imageBase64, mediaType as MediaType);
+    const hasPet = await detectPet(resized.base64, resized.mediaType);
     return NextResponse.json({ hasPet });
   } catch (err) {
     console.error("Pet detection error:", err);

@@ -14,9 +14,11 @@ interface Props {
   onSelect: (voice: VoiceStyle) => void;
   format?: "caption" | "convo";
   onFormatChange?: (format: "caption" | "convo") => void;
+  lockedVoices?: VoiceStyle[];
+  onLockedSelect?: (voice: VoiceStyle) => void;
 }
 
-export default function VoiceSelector({ selected, onSelect, format, onFormatChange }: Props) {
+export default function VoiceSelector({ selected, onSelect, format, onFormatChange, lockedVoices, onLockedSelect }: Props) {
   return (
     <div className="px-3 py-1.5">
       <div className="mb-1.5 flex items-center justify-between">
@@ -49,20 +51,23 @@ export default function VoiceSelector({ selected, onSelect, format, onFormatChan
       <div className="flex flex-wrap gap-1">
         {VOICES.map((voice) => {
           const isActive = selected === voice.id;
+          const isLocked = lockedVoices?.includes(voice.id) ?? false;
 
           return (
             <button
               key={voice.id}
-              onClick={() => onSelect(voice.id)}
+              onClick={() => (isLocked ? onLockedSelect?.(voice.id) : onSelect(voice.id))}
               className={`btn-press flex items-center gap-0.5 rounded-full px-2 py-1.5 text-xs font-semibold transition-all ${
                 isActive
                   ? "bg-coral text-white shadow-md"
-                  : "bg-white text-charcoal shadow-sm ring-1 ring-gray-200"
+                  : isLocked
+                    ? "bg-white text-charcoal/40 shadow-sm ring-1 ring-gray-200"
+                    : "bg-white text-charcoal shadow-sm ring-1 ring-gray-200"
               }`}
               aria-pressed={isActive}
-              aria-label={`${voice.label} voice`}
+              aria-label={`${voice.label} voice${isLocked ? " (share to unlock)" : ""}`}
             >
-              <span>{voice.emoji}</span>
+              <span>{isLocked ? "🔒" : voice.emoji}</span>
               <span>{voice.label}</span>
             </button>
           );

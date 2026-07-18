@@ -276,7 +276,7 @@ function drawMeme(
 
   ctx.textAlign = "right";
   ctx.font = `${ctaFontSize}px ${fontFamily}`;
-  ctx.fillText("Try it free \u2192", w - padding, footerCenterY);
+  ctx.fillText("get your pet's captions \u2192", w - padding, footerCenterY);
 
   return canvas;
 }
@@ -791,7 +791,7 @@ function drawConvo(
 
   ctx.textAlign = "right";
   ctx.font = `${ctaFontSize}px ${fontFamily}`;
-  ctx.fillText("Try it free \u2192", W - 32, footerCenterY);
+  ctx.fillText("get your pet's texts \u2192", W - 32, footerCenterY);
 
   // Trim canvas to actual content height
   const trimmed = document.createElement("canvas");

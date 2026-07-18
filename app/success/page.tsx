@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useEffect, useState, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
@@ -74,7 +74,7 @@ function SuccessContent() {
             Welcome to PRO!
           </h1>
           <p className="text-charcoal-light mb-6">
-            You now get 20 translations per day. Go wild.
+            You now get 15 translations per day. Go wild.
           </p>
           <a
             href="/"

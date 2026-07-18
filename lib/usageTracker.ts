@@ -1,7 +1,8 @@
 "use client";
 
 const FREE_USES_PER_DAY = 3;
-const PREMIUM_USES_PER_DAY = 20;
+const PREMIUM_USES_PER_DAY = 15;
+const SHARE_BONUS = 3;
 
 // Premium storage keys
 const PREMIUM_KEY = "wmpt_premium";
@@ -122,11 +123,40 @@ export async function reverifyPremium(): Promise<boolean> {
   }
 }
 
+// --- Share unlock (free tier only, resets at local midnight via the day key) ---
+
+/** Whether the Dramatic Narrator voice is available (PRO always; free users unlock it by sharing) */
+export function isDramaticUnlocked(): boolean {
+  if (typeof window === "undefined") return true;
+  if (isPremium()) return true;
+  return getNum(storageKey("share_unlock")) === 1;
+}
+
+/** Whether today's share unlock has already been claimed */
+export function isShareUnlockClaimed(): boolean {
+  return getNum(storageKey("share_unlock")) === 1;
+}
+
+/**
+ * Grant the share unlock: Dramatic Narrator for today + 3 bonus translations.
+ * Once per day, free tier only. Returns true if newly granted.
+ */
+export function grantShareUnlock(): boolean {
+  if (typeof window === "undefined") return false;
+  if (isPremium()) return false;
+  if (isShareUnlockClaimed()) return false;
+  setNum(storageKey("share_unlock"), 1);
+  setNum(storageKey("share_bonus"), SHARE_BONUS);
+  return true;
+}
+
 // --- Credits ---
 
 /** How many credits are available right now */
 export function getAvailableCredits(): number {
-  const dailyLimit = isPremium() ? PREMIUM_USES_PER_DAY : FREE_USES_PER_DAY;
+  const dailyLimit = isPremium()
+    ? PREMIUM_USES_PER_DAY
+    : FREE_USES_PER_DAY + getNum(storageKey("share_bonus"));
   const used = getNum(storageKey("free_used"));
   return Math.max(0, dailyLimit - used);
 }

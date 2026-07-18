@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { translatePetPhoto, generatePetConvo, type VoiceStyle } from "@/lib/anthropic";
+import { resizeForClaude } from "@/lib/serverImage";
 import { supabaseAdmin } from "@/lib/supabaseServer";
 
 export const maxDuration = 30;
@@ -171,10 +172,12 @@ export async function POST(request: NextRequest) {
     const validGenders = ["male", "female"];
     const cleanGender = validGenders.includes(gender) ? gender : undefined;
 
+    const resized = await resizeForClaude(imageBase64, mediaType as MediaType);
+
     if (format === "convo") {
       const messages = await generatePetConvo(
-        imageBase64,
-        mediaType as MediaType,
+        resized.base64,
+        resized.mediaType,
         voiceStyle as VoiceStyle,
         cleanName || undefined,
         cleanGender
@@ -183,8 +186,8 @@ export async function POST(request: NextRequest) {
     }
 
     const memeCaption = await translatePetPhoto(
-      imageBase64,
-      mediaType as MediaType,
+      resized.base64,
+      resized.mediaType,
       voiceStyle as VoiceStyle,
       cleanName || undefined,
       cleanGender

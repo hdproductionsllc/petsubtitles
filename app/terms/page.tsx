@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+﻿import type { Metadata } from "next";
 
 export const metadata: Metadata = {
   title: "Terms of Service — What My Pet Thinks",
@@ -46,7 +46,7 @@ export default function TermsPage() {
           <h2 className="text-lg font-bold text-charcoal mb-2">Service &amp; Pricing</h2>
           <ul className="list-disc pl-6 mt-2 space-y-1">
             <li>Free tier: 3 translations per day</li>
-            <li>PRO: $9.99/month, 20 translations per day, all voice styles</li>
+            <li>PRO: $4.99/month, 15 translations per day, all voice styles</li>
             <li>Pricing may change with notice</li>
             <li>Subscriptions managed via Stripe Customer Portal</li>
           </ul>

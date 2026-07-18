@@ -43,6 +43,7 @@ export async function shareImage(
     await navigator.share({
       title: "What My Pet Thinks",
       text,
+      url: "https://whatmypetthinks.com",
       files: [file],
     });
     return true;
