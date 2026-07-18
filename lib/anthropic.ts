@@ -486,3 +486,122 @@ export async function generatePetConvo(
     return await attempt();
   }
 }
+
+export async function generatePetReply(
+  base64: string,
+  mediaType: string,
+  voiceStyle: VoiceStyle,
+  transcript: ConvoMessage[], // full convo so far; last entry is the owner's new reply
+  petName?: string,
+  gender?: string
+): Promise<ConvoMessage[]> {
+  const voiceModifier = VOICE_MODIFIERS[voiceStyle];
+  // Byte-identical system prefix to generatePetConvo — same cached block + same
+  // voice-modifier string — so replies hit the convo prompt cache (2351 tokens).
+  const systemBlocks: Anthropic.TextBlockParam[] = [
+    {
+      type: "text",
+      text: CONVO_SYSTEM_PROMPT,
+      cache_control: { type: "ephemeral" },
+    },
+  ];
+  if (voiceModifier) {
+    systemBlocks.push({
+      type: "text",
+      text: `IMPORTANT additional voice direction (apply to PET messages only): ${voiceModifier}`,
+    });
+  }
+
+  const contactName = petName || "Pet";
+  const genderHint = gender === "male" ? " The pet is a boy." : gender === "female" ? " The pet is a girl." : "";
+  const nameWarning = petName ? " Do NOT invent names for any other animals in the photo — use fun terms like \"my associate\" or \"the accomplice\" instead." : "";
+  const conversationSoFar = transcript
+    .map((m) => `${m.sender === "pet" ? "PET" : "OWNER"}: ${m.text}`)
+    .join("\n");
+  const userText = `Continue this text conversation between a pet and their owner. The pet's contact name is "${contactName}".${genderHint}${nameWarning}\n\nThe conversation so far:\n${conversationSoFar}\n\nThe owner just sent the final message. Continue the conversation as the PET ONLY, keeping the exact same personality and voice already established. Reply with 1-3 short messages (each 3-15 words) that escalate or double down on the running bits. Return ONLY a JSON object: {"messages": [{"sender": "pet", "text": "..."}]}, no other text.`;
+
+  async function attempt(): Promise<ConvoMessage[]> {
+    const response = await client.messages.create({
+      model: "claude-sonnet-5",
+      max_tokens: 512,
+      thinking: { type: "disabled" },
+      system: systemBlocks,
+      messages: [
+        {
+          role: "user",
+          content: [
+            {
+              type: "image",
+              source: {
+                type: "base64",
+                media_type: mediaType as "image/jpeg" | "image/png" | "image/gif" | "image/webp",
+                data: base64,
+              },
+            },
+            { type: "text", text: userText },
+          ],
+        },
+      ],
+    });
+
+    const u = response.usage;
+    console.log(`[reply] tokens in=${u.input_tokens} out=${u.output_tokens} cacheWrite=${u.cache_creation_input_tokens} cacheRead=${u.cache_read_input_tokens}`);
+
+    const textBlock = response.content.find((block) => block.type === "text");
+    if (!textBlock || textBlock.type !== "text") {
+      throw new Error("No text response from AI");
+    }
+
+    let raw = textBlock.text.trim();
+    // Strip markdown fences if present
+    const fenceMatch = raw.match(/```(?:json)?\s*([\s\S]*?)\s*```/);
+    if (fenceMatch) raw = fenceMatch[1];
+    // Extract JSON object
+    const start = raw.indexOf("{");
+    const end = raw.lastIndexOf("}");
+    if (start !== -1 && end !== -1) raw = raw.slice(start, end + 1);
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    let parsed: any;
+    try {
+      parsed = JSON.parse(raw);
+    } catch {
+      throw new Error("Failed to parse reply JSON");
+    }
+
+    if (!Array.isArray(parsed.messages)) {
+      throw new Error("Invalid reply format");
+    }
+
+    // Keep only well-formed pet messages, trim, enforce 1-200 chars, cap at 3
+    const petMsgs: ConvoMessage[] = parsed.messages
+      .filter(
+        (m: unknown) =>
+          typeof m === "object" &&
+          m !== null &&
+          "sender" in m &&
+          "text" in m &&
+          (m as ConvoMessage).sender === "pet" &&
+          typeof (m as ConvoMessage).text === "string"
+      )
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      .map((m: any) => ({ sender: "pet" as const, text: (m.text as string).trim() }))
+      .filter((m: ConvoMessage) => m.text.length >= 1 && m.text.length <= 200)
+      .slice(0, 3);
+
+    if (petMsgs.length === 0) {
+      throw new Error("No valid pet reply messages");
+    }
+
+    return petMsgs;
+  }
+
+  // Try once; retry only on fast failures (parse errors), not timeouts/API errors
+  const start = Date.now();
+  try {
+    return await attempt();
+  } catch (err) {
+    if (Date.now() - start > 12_000) throw err;
+    return await attempt();
+  }
+}

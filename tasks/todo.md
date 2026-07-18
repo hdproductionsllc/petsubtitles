@@ -20,6 +20,7 @@ Goal: wake the project up — the live site is still the Feb 18 build; deploys a
 - [x] Commit + `npm run deploy`
 - [ ] Verify cache hits + `[caption]`/`[convo]` usage lines in prod logs after deploy
 - [ ] Follow-up: QR code on the standard share image (Story format already has one)
+- [ ] "Reply to your pet" (Opus workflow in flight): generatePetReply in lib/anthropic.ts (reuses cached convo system prompt), POST /api/reply, ReplyComposer UI — thread re-composites into the share image; free 3 replies/convo → PRO nudge, PRO 20; GA4 reply_sent/reply_received/reply_limit_reached
 
 ## Phase 10: Cost Reduction Pass (2026-04-25)
 

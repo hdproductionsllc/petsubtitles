@@ -8,6 +8,7 @@ import TranslateButton from "@/components/TranslateButton";
 import PaywallModal from "@/components/PaywallModal";
 import ResultDisplay from "@/components/ResultDisplay";
 import ShareButtons from "@/components/ShareButtons";
+import ReplyComposer from "@/components/ReplyComposer";
 import ExampleCarousel from "@/components/ExampleCarousel";
 import LiveFeed from "@/components/LiveFeed";
 import { uploadTranslation } from "@/lib/feedUploader";
@@ -88,6 +89,9 @@ export default function Home() {
   const [usedVoices, setUsedVoices] = useState<VoiceStyle[]>([]);
   const [dramaticLocked, setDramaticLocked] = useState(false);
   const [unlockHint, setUnlockHint] = useState(false);
+  const [replyCount, setReplyCount] = useState(0);
+  const [isReplying, setIsReplying] = useState(false);
+  const [replyError, setReplyError] = useState("");
 
   const photoCaptureRef = useRef<PhotoCaptureHandle>(null);
 
@@ -140,6 +144,8 @@ export default function Home() {
       const result = await processImageFile(file);
       setImageData(result);
       setPreviewUrl(result.originalDataUrl);
+      setReplyCount(0);
+      setReplyError("");
       setAppState("photo_selected");
     } catch {
       setError("Could not process that image. Please try another photo.");
@@ -158,6 +164,8 @@ export default function Home() {
     setConvoMessages([]);
     setMemeCaption(null);
     setError("");
+    setReplyCount(0);
+    setReplyError("");
     setAppState("idle");
   }, []);
 
@@ -172,6 +180,8 @@ export default function Home() {
     setConvoMessages([]);
     setMemeCaption(null);
     setError("");
+    setReplyCount(0);
+    setReplyError("");
     setAppState("idle");
     setTimeout(() => {
       photoCaptureRef.current?.openFilePicker();
@@ -228,6 +238,8 @@ export default function Home() {
     trackEvent("translate_tapped", { format });
     setAppState("translating");
     setError("");
+    setReplyCount(0);
+    setReplyError("");
 
     try {
       const res = await fetch("/api/translate", {
@@ -415,6 +427,100 @@ export default function Home() {
     doTranslate(suggestedVoice);
   }, [suggestedVoice, doTranslate]);
 
+  /** Reply limits: free 3, PRO 20 per conversation. Resets on new generation/photo. */
+  const replyCap = isPremium() ? 20 : 3;
+  const repliesLeft = replyCap - replyCount;
+
+  /** Out of replies: nudge free users toward PRO, never PRO users. */
+  const handleReplyLimit = useCallback(() => {
+    trackEvent("reply_limit_reached", { is_premium: isPremium() });
+    if (!isPremium()) setPaywallOpen(true);
+  }, []);
+
+  /** Send an owner reply; pet answers back and the share image grows with the thread. */
+  const handleReplySend = useCallback(async (text: string) => {
+    if (!imageData) return;
+
+    const priorMessages = convoMessages;
+    const optimistic: ConvoMessage[] = [...priorMessages, { sender: "owner", text }];
+    const replyNumber = replyCount + 1;
+
+    // Optimistically show the owner's message; keep the result on screen throughout
+    setConvoMessages(optimistic);
+    setReplyError("");
+    setIsReplying(true);
+    trackEvent("reply_sent", { reply_number: replyNumber });
+
+    try {
+      const res = await fetch("/api/reply", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          imageBase64: imageData.base64,
+          mediaType: imageData.mediaType,
+          voiceStyle: selectedVoice,
+          petName: petName || undefined,
+          gender: petGender || undefined,
+          messages: priorMessages,
+          reply: text,
+          customerId: getPremiumCustomerId() || undefined,
+        }),
+      });
+
+      const body = await res.text();
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      let data: any;
+      try {
+        data = JSON.parse(body);
+      } catch {
+        throw new Error(
+          res.ok
+            ? "Something went wrong. Try again!"
+            : "Your pet got distracted. Try again in a moment!"
+        );
+      }
+      if (!res.ok) {
+        throw new Error(data?.error || "Your pet got distracted. Try again in a moment!");
+      }
+
+      const petMessages = data.messages as ConvoMessage[];
+      const full = [...optimistic, ...petMessages];
+      setConvoMessages(full);
+      setReplyCount(replyNumber);
+      playMessageSound();
+      trackEvent("reply_received", { message_count: petMessages.length });
+
+      // Re-composite the whole thread so the share image includes the new replies
+      const composited = await compositeConvo(imageData.originalDataUrl, full, petName || undefined);
+      setStandardImage(composited.standardDataUrl);
+      setStoryImage(composited.storyDataUrl);
+
+      // Keep the share caption in sync with the fuller thread
+      const convoText = full
+        .filter((m) => m.text !== "[PHOTO]")
+        .map((m) => `${m.sender === "pet" ? (petName || "Pet") : "Owner"}: ${m.text}`)
+        .join("\n");
+      setCaption(convoText);
+
+      const thumbnail = await createThumbnail(composited.standardDataUrl);
+      saveToHistory({
+        thumbnailDataUrl: thumbnail,
+        standardImageUrl: composited.standardDataUrl,
+        storyImageUrl: composited.storyDataUrl,
+        caption: "Text Convo",
+      });
+      setHistoryKey((k) => k + 1);
+    } catch (err) {
+      // Roll back the optimistic owner message; leave the result visible
+      setConvoMessages(priorMessages);
+      setReplyError(
+        err instanceof Error ? err.message : "Your pet got distracted. Try again!"
+      );
+    } finally {
+      setIsReplying(false);
+    }
+  }, [imageData, convoMessages, replyCount, selectedVoice, petName, petGender]);
+
   const showingResult = appState === "result";
   const showingLoading = appState === "translating" || appState === "scanning";
 
@@ -561,6 +667,26 @@ export default function Home() {
           <div className="mt-1">
             <ResultDisplay imageDataUrl={standardImage} caption={caption} hideCaption={selectedFormat === "convo"} />
           </div>
+
+          {/* Reply to your pet — the screenshot grows with the thread */}
+          {selectedFormat === "convo" && convoMessages.length > 0 && imageData && (
+            <>
+              <ReplyComposer
+                onSend={handleReplySend}
+                disabled={isReplying || isOffline}
+                isThinking={isReplying}
+                repliesLeft={repliesLeft}
+                isPro={isPremium()}
+                onLimitReached={handleReplyLimit}
+                petName={petName || undefined}
+              />
+              {replyError && (
+                <div className="mx-3 mt-1.5 rounded-xl bg-red-50 px-3 py-1.5 text-center animate-fade-up">
+                  <p className="text-xs font-semibold text-red-600">{replyError}</p>
+                </div>
+              )}
+            </>
+          )}
 
           {/* Name hint for returning users who haven't set a name */}
           {!petName && !isFirstTime && (
