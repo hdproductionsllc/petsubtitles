@@ -21,18 +21,24 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  // Generation counts from Supabase (null if project unreachable/unconfigured)
+  // Generation counts from Supabase. null = database unreachable; 0 = quiet day.
   let generationsToday: number | null = null;
   let generationsYesterday: number | null = null;
+  let supabaseReachable = false;
   if (supabaseAdmin) {
     try {
-      const { data } = await supabaseAdmin
+      const { data, error } = await supabaseAdmin
         .from("daily_stats")
         .select("date, free_generations")
         .in("date", [dateKey(0), dateKey(1)]);
-      for (const row of data ?? []) {
-        if (row.date === dateKey(0)) generationsToday = row.free_generations;
-        if (row.date === dateKey(1)) generationsYesterday = row.free_generations;
+      if (!error) {
+        supabaseReachable = true;
+        generationsToday = 0;
+        generationsYesterday = 0;
+        for (const row of data ?? []) {
+          if (row.date === dateKey(0)) generationsToday = row.free_generations;
+          if (row.date === dateKey(1)) generationsYesterday = row.free_generations;
+        }
       }
     } catch {
       // leave nulls — Supabase down is a reportable state, not an error
@@ -57,6 +63,6 @@ export async function GET(request: NextRequest) {
     generationsYesterday,
     activeSubscriptions,
     newSubscriptionsLast7d,
-    supabaseReachable: generationsToday !== null || generationsYesterday !== null,
+    supabaseReachable,
   });
 }
